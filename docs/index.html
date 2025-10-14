@@ -2,8 +2,8 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <title>Example SMART App</title>
-        <script src="./fhir-client.js"></script>
+        <title>Example SMART App</title>        <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+
         <style>
             #patient, #meds {
                 font-family: Monaco, monospace;
@@ -23,7 +23,6 @@
         <div id="meds">Loading...</div>
         <script type="text/javascript">
             FHIR.oauth2.ready().then(function(client) {
-                
                 // Render the current patient (or any error)
                 client.patient.read().then(
                     function(pt) {
