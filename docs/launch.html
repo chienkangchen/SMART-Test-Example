@@ -11,12 +11,15 @@
                 const params = new URLSearchParams(window.location.search);
                 const iss = params.get("iss");
                 const launch = params.get("launch");
+                const formattedParams = Array.from(params.entries())
+                    .map(([key, value]) => `${key}: ${value ?? "<undefined>"}`)
+                    .join("\n");
                 const status = document.createElement("pre");
                 status.id = "status";
                 document.body.appendChild(status);
 
                 if (!iss || !launch) {
-                    status.textContent = "Missing required launch parameters. Aborting SMART launch.";
+                    status.textContent = "Missing required launch parameters. Aborting SMART launch.\n\nReceived parameters:\n" + formattedParams;
                     return;
                 }
 
@@ -51,7 +54,7 @@
                       redirectUri: "index.html"
                     });
                 } catch (error) {
-                    status.textContent = `Unable to validate issuer: ${error.message}`;
+                    status.textContent = `Unable to validate issuer: ${error.message}\n\niss: ${iss}\nlaunch: ${launch}\n\nReceived parameters:\n${formattedParams}`;
                 }
             })();
         </script>
