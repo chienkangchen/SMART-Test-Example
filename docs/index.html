@@ -5,7 +5,7 @@
         <title>Example SMART App</title>
         <script src="./fhir-client.js"></script>
         <style>
-            #patient, #meds {
+            #context, #patient, #meds {
                 font-family: Monaco, monospace;
                 white-space: pre;
                 font-size: 13px;
@@ -16,6 +16,9 @@
         </style>
     </head>
     <body>
+        <h4>SMART Context</h4>
+        <div id="context">Loading...</div>
+        <br/>
         <h4>Current Patient</h4>
         <div id="patient">Loading...</div>
         <br/>
@@ -23,6 +26,19 @@
         <div id="meds">Loading...</div>
         <script type="text/javascript">
             FHIR.oauth2.ready().then(function(client) {
+                try {
+                    var contextDiv = document.getElementById("context");
+                    var debugContext = {
+                        state: client.state,
+                        patientId: client.patient && client.patient.id,
+                        encounterId: client.encounter && client.encounter.id,
+                        userId: client.userId || (client.user && client.user.id) || null
+                    };
+                    contextDiv.innerText = JSON.stringify(debugContext, null, 4);
+                } catch (contextError) {
+                    document.getElementById("context").innerText = "Unable to serialize SMART context: " + contextError.message;
+                }
+
                 // Render the current patient (or any error)
                 client.patient.read().then(
                     function(pt) {
