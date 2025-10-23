@@ -27,7 +27,10 @@
 
                 try {
                     const smartConfigUrl = iss + "/.well-known/smart-configuration";
+<<<<<<< HEAD
                     console.log(smartConfigUrl);
+=======
+>>>>>>> 897c69bae7c173b0adb6356a623ec78b65725403
                     const response = await fetch(smartConfigUrl, { method: "GET" });
                     if (!response.ok) {
                         throw new Error(`SMART configuration returned HTTP ${response.status}`);
@@ -59,4 +62,5 @@
             })();
         </script>
     </body>
+
 </html>
