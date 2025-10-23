@@ -26,7 +26,7 @@
                 status.textContent = "Validating issuer...";
 
                 try {
-                    const smartConfigUrl = new URL("/.well-known/smart-configuration", iss).toString();
+                    const smartConfigUrl = iss + "/.well-known/smart-configuration";
                     const response = await fetch(smartConfigUrl, { method: "GET" });
                     if (!response.ok) {
                         throw new Error(`SMART configuration returned HTTP ${response.status}`);
@@ -60,4 +60,5 @@
             })();
         </script>
     </body>
+
 </html>
