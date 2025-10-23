@@ -1,80 +1,559 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
     <head>
         <meta charset="UTF-8" />
-        <title>Example SMART App</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>病人用藥時間表 - SMART on FHIR</title>
         <script src="./fhir-client.js"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
         <style>
-            #context, #patient, #meds {
-                font-family: Monaco, monospace;
-                white-space: pre;
-                font-size: 13px;
-                height: 30vh;
-                overflow: scroll;
-                border: 1px solid #CCC;
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 20px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+
+            .header {
+                background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+                margin-bottom: 10px;
+                font-weight: 300;
+            }
+
+            .header p {
+                font-size: 1.1rem;
+                opacity: 0.9;
+            }
+
+            .content {
+                padding: 30px;
+            }
+
+            .loading {
+                text-align: center;
+                padding: 50px;
+                color: #666;
+                font-size: 1.2rem;
+            }
+
+            .loading i {
+                animation: spin 1s linear infinite;
+                margin-right: 10px;
+                font-size: 1.5rem;
+            }
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            .patient-info {
+                background: #f8f9fa;
+                border-radius: 15px;
+                padding: 25px;
+                margin-bottom: 30px;
+                border-left: 5px solid #4CAF50;
+            }
+
+            .patient-info h2 {
+                color: #333;
+                margin-bottom: 15px;
+                display: flex;
+                align-items: center;
+            }
+
+            .patient-info h2 i {
+                margin-right: 10px;
+                color: #4CAF50;
+            }
+
+            .patient-details {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 15px;
+            }
+
+            .detail-item {
+                display: flex;
+                align-items: center;
+                padding: 10px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            .detail-item i {
+                margin-right: 10px;
+                color: #4CAF50;
+                width: 20px;
+            }
+
+            .medication-section h2 {
+                color: #333;
+                margin-bottom: 25px;
+                display: flex;
+                align-items: center;
+            }
+
+            .medication-section h2 i {
+                margin-right: 10px;
+                color: #2196F3;
+            }
+
+            .medication-list {
+                display: grid;
+                gap: 20px;
+            }
+
+            .medication-card {
+                background: white;
+                border-radius: 15px;
+                padding: 25px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                border-left: 5px solid #2196F3;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+
+            .medication-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            }
+
+            .medication-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: start;
+                margin-bottom: 15px;
+            }
+
+            .medication-name {
+                font-size: 1.3rem;
+                font-weight: 600;
+                color: #333;
+                margin-bottom: 5px;
+            }
+
+            .medication-status {
+                padding: 5px 12px;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+
+            .status-active {
+                background: #e8f5e8;
+                color: #4CAF50;
+            }
+
+            .status-completed {
+                background: #e3f2fd;
+                color: #2196F3;
+            }
+
+            .medication-details {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin-top: 15px;
+            }
+
+            .detail-row {
+                display: flex;
+                align-items: center;
+                padding: 8px 0;
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .detail-row:last-child {
+                border-bottom: none;
+            }
+
+            .detail-row i {
+                margin-right: 8px;
+                color: #666;
+                width: 16px;
+            }
+
+            .detail-label {
+                font-weight: 500;
+                color: #555;
+                margin-right: 10px;
+                min-width: 80px;
+            }
+
+            .detail-value {
+                color: #333;
+                flex: 1;
+            }
+
+            .error-message {
+                background: #ffebee;
+                color: #c62828;
+                padding: 20px;
+                border-radius: 10px;
+                border-left: 5px solid #f44336;
+                margin: 20px 0;
+            }
+
+            .error-message i {
+                margin-right: 10px;
+            }
+
+            .no-data {
+                text-align: center;
+                padding: 50px;
+                color: #666;
+            }
+
+            .no-data i {
+                font-size: 3rem;
+                margin-bottom: 15px;
+                color: #ddd;
+            }
+
+            .schedule-time {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 8px 15px;
+                border-radius: 20px;
+                font-weight: 600;
+                display: inline-block;
+                margin: 5px 5px 5px 0;
+            }
+
+            .dosage-info {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 10px;
+                margin-top: 15px;
+            }
+
+            #oauth2read {
+                display: none;
             }
         </style>
     </head>
     <body>
-        <h4>SMART Context</h4>
-        <div id="context">Loading...</div>
-        <br/>
-        <h4>Current Patient</h4>
-        <div id="patient">Loading...</div>
-        <br/>
-        <h4>Medications</h4>
-        <div id="meds">Loading...</div>
+        <div class="container">
+            <div class="header">
+                <h1><i class="fas fa-pills"></i> 病人用藥時間表</h1>
+                <p>SMART on FHIR 應用程式 - 智慧醫療資訊系統</p>
+            </div>
+
+            <div class="content">
+                <!-- OAuth2 Debug Info (Hidden) -->
+                <div id="oauth2read"></div>
+                
+                <!-- Patient Information -->
+                <div class="patient-info">
+                    <h2><i class="fas fa-user-injured"></i> 病人資訊</h2>
+                    <div id="patient-content">
+                        <div class="loading">
+                            <i class="fas fa-spinner"></i>
+                            載入病人資料中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medications Section -->
+                <div class="medication-section">
+                    <h2><i class="fas fa-prescription-bottle-alt"></i> 用藥清單與時間表</h2>
+                    <div id="medications-content">
+                        <div class="loading">
+                            <i class="fas fa-spinner"></i>
+                            載入用藥資料中...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <script type="text/javascript">
             FHIR.oauth2.ready().then(function(client) {
-                try {
-                    var contextDiv = document.getElementById("context");
-                    var debugContext = {
-                        state: client.state,
-                        patientId: client.patient && client.patient.id,
-                        encounterId: client.encounter && client.encounter.id,
-                        userId: client.userId || (client.user && client.user.id) || null
-                    };
-                    contextDiv.innerText = JSON.stringify(debugContext, null, 4);
-                } catch (contextError) {
-                    document.getElementById("context").innerText = "Unable to serialize SMART context: " + contextError.message;
-                }
+                // Store OAuth2 info (hidden from UI)
+                document.getElementById("oauth2read").innerText = JSON.stringify(client, null, 4);
 
-                // Render the current patient (or any error)
+                // Load patient information
                 client.patient.read().then(
-                    function(pt) {
-                        document.getElementById("patient").innerText = JSON.stringify(pt, null, 4);
+                    function(patient) {
+                        displayPatientInfo(patient);
                     },
                     function(error) {
-                        document.getElementById("patient").innerText = error.stack;
+                        displayError("patient-content", "載入病人資料時發生錯誤", error);
                     }
                 );
                 
-                // Get MedicationRequests for the selected patient
+                // Load medications
                 client.request("/MedicationRequest?patient=" + client.patient.id, {
-                    resolveReferences: [ "medicationReference" ],
+                    resolveReferences: ["medicationReference"],
                     graph: true
                 })
-                
-                // Reject if no MedicationRequests are found
                 .then(function(data) {
                     if (!data.entry || !data.entry.length) {
-                        throw new Error("No medications found for the selected patient");
+                        displayNoMedications();
+                        return;
                     }
-                    return data.entry;
+                    displayMedications(data.entry);
                 })
-                
+                .catch(function(error) {
+                    displayError("medications-content", "載入用藥資料時發生錯誤", error);
+                });
 
-                // Render the current patient's medications (or any error)
-                .then(
-                    function(meds) {
-                        document.getElementById("meds").innerText = JSON.stringify(meds, null, 4);
-                    },
-                    function(error) {
-                        document.getElementById("meds").innerText = error.stack;
+            }).catch(function(error) {
+                console.error("SMART on FHIR 初始化失敗:", error);
+                displayError("patient-content", "SMART on FHIR 連線失敗", error);
+                displayError("medications-content", "SMART on FHIR 連線失敗", error);
+            });
+
+            function displayPatientInfo(patient) {
+                const container = document.getElementById("patient-content");
+                const name = getPatientName(patient);
+                const birthDate = patient.birthDate || "未知";
+                const gender = getGenderText(patient.gender);
+                const id = patient.id || "未知";
+
+                container.innerHTML = `
+                    <div class="patient-details">
+                        <div class="detail-item">
+                            <i class="fas fa-user"></i>
+                            <div>
+                                <div class="detail-label">姓名</div>
+                                <div class="detail-value">${name}</div>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-birthday-cake"></i>
+                            <div>
+                                <div class="detail-label">出生日期</div>
+                                <div class="detail-value">${birthDate}</div>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-venus-mars"></i>
+                            <div>
+                                <div class="detail-label">性別</div>
+                                <div class="detail-value">${gender}</div>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-id-card"></i>
+                            <div>
+                                <div class="detail-label">病人ID</div>
+                                <div class="detail-value">${id}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function displayMedications(medications) {
+                const container = document.getElementById("medications-content");
+                const medicationCards = medications.map(entry => {
+                    const medication = entry.resource;
+                    return createMedicationCard(medication);
+                }).join("");
+
+                container.innerHTML = `<div class="medication-list">${medicationCards}</div>`;
+            }
+
+            function createMedicationCard(medication) {
+                const medicationName = getMedicationName(medication);
+                const status = medication.status || "unknown";
+                const statusClass = getStatusClass(status);
+                const statusText = getStatusText(status);
+                const dosage = getDosageInstructions(medication);
+                const authoredOn = medication.authoredOn ? new Date(medication.authoredOn).toLocaleDateString('zh-TW') : "未知";
+                const intent = medication.intent || "未知";
+
+                return `
+                    <div class="medication-card">
+                        <div class="medication-header">
+                            <div>
+                                <div class="medication-name">${medicationName}</div>
+                            </div>
+                            <div class="medication-status ${statusClass}">${statusText}</div>
+                        </div>
+                        
+                        <div class="medication-details">
+                            <div class="detail-row">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span class="detail-label">開立日期:</span>
+                                <span class="detail-value">${authoredOn}</span>
+                            </div>
+                            <div class="detail-row">
+                                <i class="fas fa-clipboard-list"></i>
+                                <span class="detail-label">醫囑類型:</span>
+                                <span class="detail-value">${getIntentText(intent)}</span>
+                            </div>
+                        </div>
+
+                        ${dosage ? `<div class="dosage-info">${dosage}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            function displayNoMedications() {
+                const container = document.getElementById("medications-content");
+                container.innerHTML = `
+                    <div class="no-data">
+                        <i class="fas fa-prescription-bottle"></i>
+                        <h3>目前沒有用藥紀錄</h3>
+                        <p>此病人目前沒有任何用藥處方或藥物治療紀錄。</p>
+                    </div>
+                `;
+            }
+
+            function displayError(containerId, message, error) {
+                const container = document.getElementById(containerId);
+                container.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>${message}</strong><br>
+                        ${error.message || error.stack || JSON.stringify(error)}
+                    </div>
+                `;
+            }
+
+            // Helper functions
+            function getPatientName(patient) {
+                if (patient.name && patient.name.length > 0) {
+                    const name = patient.name[0];
+                    const family = name.family || "";
+                    const given = (name.given && name.given.join(" ")) || "";
+                    return `${family} ${given}`.trim() || "未知姓名";
+                }
+                return "未知姓名";
+            }
+
+            function getGenderText(gender) {
+                const genderMap = {
+                    'male': '男性',
+                    'female': '女性',
+                    'other': '其他',
+                    'unknown': '未知'
+                };
+                return genderMap[gender] || '未知';
+            }
+
+            function getMedicationName(medication) {
+                // Try to get medication name from various places
+                if (medication.medicationCodeableConcept && medication.medicationCodeableConcept.text) {
+                    return medication.medicationCodeableConcept.text;
+                }
+                if (medication.medicationCodeableConcept && medication.medicationCodeableConcept.coding && medication.medicationCodeableConcept.coding.length > 0) {
+                    return medication.medicationCodeableConcept.coding[0].display || medication.medicationCodeableConcept.coding[0].code;
+                }
+                if (medication.medicationReference && medication.medicationReference.display) {
+                    return medication.medicationReference.display;
+                }
+                return "未知藥物";
+            }
+
+            function getStatusClass(status) {
+                const statusMap = {
+                    'active': 'status-active',
+                    'completed': 'status-completed',
+                    'stopped': 'status-completed'
+                };
+                return statusMap[status] || 'status-active';
+            }
+
+            function getStatusText(status) {
+                const statusMap = {
+                    'active': '使用中',
+                    'completed': '已完成',
+                    'stopped': '已停用',
+                    'draft': '草稿',
+                    'cancelled': '已取消'
+                };
+                return statusMap[status] || status;
+            }
+
+            function getIntentText(intent) {
+                const intentMap = {
+                    'proposal': '建議',
+                    'plan': '計畫',
+                    'order': '醫囑',
+                    'original-order': '原始醫囑',
+                    'reflex-order': '反射性醫囑',
+                    'filler-order': '執行醫囑',
+                    'instance-order': '實例醫囑'
+                };
+                return intentMap[intent] || intent;
+            }
+
+            function getDosageInstructions(medication) {
+                if (!medication.dosageInstruction || medication.dosageInstruction.length === 0) {
+                    return null;
+                }
+
+                const dosage = medication.dosageInstruction[0];
+                let dosageHtml = '<h4><i class="fas fa-clock"></i> 用藥說明</h4>';
+
+                if (dosage.text) {
+                    dosageHtml += `<div class="detail-row"><i class="fas fa-info-circle"></i><span class="detail-label">說明:</span><span class="detail-value">${dosage.text}</span></div>`;
+                }
+
+                if (dosage.timing && dosage.timing.repeat) {
+                    const repeat = dosage.timing.repeat;
+                    if (repeat.frequency && repeat.period) {
+                        dosageHtml += `<div class="detail-row"><i class="fas fa-clock"></i><span class="detail-label">頻率:</span><span class="detail-value">每 ${repeat.period} ${getPeriodUnit(repeat.periodUnit)} ${repeat.frequency} 次</span></div>`;
                     }
-                );
+                    if (repeat.timeOfDay && repeat.timeOfDay.length > 0) {
+                        const times = repeat.timeOfDay.map(time => `<span class="schedule-time">${time}</span>`).join('');
+                        dosageHtml += `<div class="detail-row"><i class="fas fa-clock"></i><span class="detail-label">時間:</span><span class="detail-value">${times}</span></div>`;
+                    }
+                }
 
-            }).catch(console.error);
+                if (dosage.doseAndRate && dosage.doseAndRate.length > 0) {
+                    const dose = dosage.doseAndRate[0];
+                    if (dose.doseQuantity) {
+                        dosageHtml += `<div class="detail-row"><i class="fas fa-pills"></i><span class="detail-label">劑量:</span><span class="detail-value">${dose.doseQuantity.value} ${dose.doseQuantity.unit}</span></div>`;
+                    }
+                }
+
+                if (dosage.route && dosage.route.text) {
+                    dosageHtml += `<div class="detail-row"><i class="fas fa-syringe"></i><span class="detail-label">給藥途徑:</span><span class="detail-value">${dosage.route.text}</span></div>`;
+                }
+
+                return dosageHtml;
+            }
+
+            function getPeriodUnit(unit) {
+                const unitMap = {
+                    's': '秒',
+                    'min': '分鐘',
+                    'h': '小時',
+                    'd': '天',
+                    'wk': '週',
+                    'mo': '月',
+                    'a': '年'
+                };
+                return unitMap[unit] || unit;
+            }
         </script>
     </body>
 </html>

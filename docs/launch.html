@@ -26,7 +26,8 @@
                 status.textContent = "Validating issuer...";
 
                 try {
-                    const smartConfigUrl = new URL("/.well-known/smart-configuration", iss).toString();
+                    const smartConfigUrl = iss + "/.well-known/smart-configuration";
+                    console.log(smartConfigUrl);
                     const response = await fetch(smartConfigUrl, { method: "GET" });
                     if (!response.ok) {
                         throw new Error(`SMART configuration returned HTTP ${response.status}`);
@@ -38,7 +39,7 @@
 
                       // The client_id that you should have obtained after registering a client at
                       // the EHR.
-                      clientId: "my_web_app",
+                      clientId: "abc",
 
                       // The scopes that you request from the EHR. In this case we want to:
                       // launch            - Get the launch context
@@ -53,8 +54,6 @@
                       redirectUri: "index.html"
                     });
                 } catch (error) {
-                    const smartConfigUrl = new URL("/.well-known/smart-configuration", iss).toString();
-                    const response = await fetch(smartConfigUrl, { method: "GET" });
                     status.textContent = `Unable to validate issuer: ${error.message}\n\niss: ${iss}\nlaunch: ${launch}\n\nReceived parameters:\n${formattedParams}\r\n${response}`;
                 }
             })();
