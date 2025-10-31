@@ -293,6 +293,7 @@
 
         <script type="text/javascript">
             FHIR.oauth2.ready().then(function(client) {
+                console.log(client);
                 // Store OAuth2 info (hidden from UI)
                 document.getElementById("oauth2read").innerText = JSON.stringify(client, null, 4);
 
