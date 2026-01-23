@@ -356,9 +356,147 @@ function displayQuestions(questionnaire) {
         return;
     }
 
-    // 遞迴渲染題目項目
-    const questionsHtml = renderQuestionItems(questionnaire.item);
-    container.innerHTML = questionsHtml;
+    // 檢查是否應使用表格模式（所有題目都是 choice 類型）
+    const canUseTableMode = isTableModeApplicable(questionnaire.item);
+    
+    if (canUseTableMode) {
+        // 使用表格模式
+        container.innerHTML = renderQuestionnaireAsTable(questionnaire.item);
+    } else {
+        // 使用列表模式
+        const questionsHtml = renderQuestionItems(questionnaire.item);
+        container.innerHTML = questionsHtml;
+    }
+}
+
+/**
+ * 檢查問卷是否適合表格模式（所有非群組題目都是 choice 類型）
+ * @param {Array} items - 問卷項目陣列
+ * @returns {boolean}
+ */
+function isTableModeApplicable(items) {
+    // 如果少於 3 個題目，不用表格模式
+    if (items.length < 3) return false;
+    
+    // 檢查所有非群組題目是否都是 choice 類型
+    return items.every(item => {
+        return item.type === 'choice' || item.type === 'group';
+    });
+}
+
+/**
+ * 以表格形式渲染問卷
+ * @param {Array} items - 問卷項目陣列
+ * @returns {string} 生成的 HTML 字串
+ */
+function renderQuestionnaireAsTable(items) {
+    // 過濾出非群組的 choice 題目
+    const choiceItems = items.filter(item => item.type === 'choice' && !item.type === 'group');
+    
+    if (choiceItems.length === 0) {
+        return renderQuestionItems(items);
+    }
+    
+    // 獲取所有可能的答案選項
+    const allOptions = [];
+    choiceItems.forEach(item => {
+        if (item.answerOption) {
+            item.answerOption.forEach(option => {
+                const optionKey = JSON.stringify(option);
+                if (!allOptions.find(o => JSON.stringify(o) === optionKey)) {
+                    allOptions.push(option);
+                }
+            });
+        }
+    });
+    
+    // 如果沒有統一的答案選項，使用列表模式
+    if (allOptions.length === 0) {
+        return renderQuestionItems(items);
+    }
+    
+    // 生成表格 HTML
+    let tableHtml = '<div class="questionnaire-table-container">';
+    tableHtml += '<table class="questionnaire-table">';
+    
+    // 表頭
+    tableHtml += '<thead><tr><th class="question-col">題目</th>';
+    allOptions.forEach((option, index) => {
+        let optionText = '';
+        if (option.valueCoding) {
+            optionText = option.valueCoding.display || option.valueCoding.code || '';
+        } else if (option.valueString) {
+            optionText = option.valueString;
+        } else if (option.valueInteger !== undefined) {
+            optionText = option.valueInteger.toString();
+        }
+        
+        // 根據選項值著色
+        const colorClass = getOptionColorClass(index, allOptions.length);
+        tableHtml += `<th class="option-col ${colorClass}">${optionText}</th>`;
+    });
+    tableHtml += '</tr></thead>';
+    
+    // 表體
+    tableHtml += '<tbody>';
+    choiceItems.forEach((item, itemIndex) => {
+        const linkId = item.linkId || `question-${itemIndex}`;
+        const text = item.text || "無題目文字";
+        const required = item.required ? '<span class="required-marker">*</span>' : '';
+        
+        tableHtml += `<tr>
+            <td class="question-cell">
+                <div class="cell-content">
+                    <div class="cell-label">${required}${text}</div>
+                    <div class="cell-linkid">${linkId}</div>
+                </div>
+            </td>`;
+        
+        allOptions.forEach((option, optIndex) => {
+            const colorClass = getOptionColorClass(optIndex, allOptions.length);
+            tableHtml += `<td class="option-cell ${colorClass}">
+                <input type="radio" name="q-${itemIndex}" id="q-${itemIndex}-opt-${optIndex}" 
+                       class="option-radio" disabled>
+                <label for="q-${itemIndex}-opt-${optIndex}"></label>
+            </td>`;
+        });
+        
+        tableHtml += '</tr>';
+    });
+    tableHtml += '</tbody>';
+    tableHtml += '</table>';
+    tableHtml += '</div>';
+    
+    // 添加使用說明
+    const description = '<div class="table-description"><i class="fas fa-info-circle"></i> 請根據您的情況選擇合適的選項</div>';
+    
+    return description + tableHtml;
+}
+
+/**
+ * 根據選項索引返回顏色 CSS 類名
+ * @param {number} index - 選項索引
+ * @param {number} total - 總選項數
+ * @returns {string} CSS 類名
+ */
+function getOptionColorClass(index, total) {
+    // 假設從左到右代表程度遞增
+    if (total <= 3) {
+        if (index === 0) return 'option-light';
+        if (index === total - 1) return 'option-heavy';
+        return 'option-medium';
+    } else if (total === 4) {
+        if (index === 0) return 'option-light';
+        if (index === 1) return 'option-medium-light';
+        if (index === 2) return 'option-medium-heavy';
+        return 'option-heavy';
+    } else { // total >= 5
+        if (index === 0) return 'option-light';
+        if (index === 1) return 'option-medium-light';
+        if (index === 2) return 'option-medium';
+        if (index === 3) return 'option-medium-heavy';
+        return 'option-heavy';
+    }
 }
 
 /**
