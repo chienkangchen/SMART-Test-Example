@@ -953,6 +953,9 @@ function renderResponseDetail(responseId) {
             </div>
         </div>
     `;
+    
+    // 更新 JSON 查看器
+    updateResponseJsonViewer(response, observations);
 }
 
 /**
@@ -983,6 +986,10 @@ function renderResponseItems(items) {
                     answerText = new Date(answer.valueDateTime).toLocaleString('zh-TW');
                 } else if (answer.valueCoding) {
                     answerText = answer.valueCoding.display || answer.valueCoding.code || '未知';
+                    // 如果同時有 valueDecimal，添加到顯示中
+                    if (answer.valueDecimal !== undefined) {
+                        answerText += ` (${answer.valueDecimal})`;
+                    }
                 } else if (answer.valueDecimal !== undefined) {
                     answerText = answer.valueDecimal.toString();
                 } else if (answer.valueQuantity) {
@@ -1127,4 +1134,30 @@ function renderNoResponses() {
             <p>該患者尚未填寫任何問卷。</p>
         </div>
     `;
+}
+
+/**
+ * 更新 Response JSON 查看器的內容
+ * @param {Object} response - QuestionnaireResponse FHIR 資源
+ * @param {Array} observations - 相關的 Observation 資源陣列
+ */
+function updateResponseJsonViewer(response, observations) {
+    const jsonViewer = document.getElementById("response-json-viewer");
+    const data = {
+        QuestionnaireResponse: response,
+        RelatedObservations: observations || []
+    };
+    jsonViewer.textContent = JSON.stringify(data, null, 2);
+}
+
+/**
+ * 切換 Response JSON 查看器的顯示/隱藏狀態
+ */
+function toggleResponseJson() {
+    const jsonViewer = document.getElementById("response-json-viewer");
+    if (jsonViewer.style.display === "none") {
+        jsonViewer.style.display = "block";
+    } else {
+        jsonViewer.style.display = "none";
+    }
 }
