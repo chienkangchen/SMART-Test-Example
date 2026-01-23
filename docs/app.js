@@ -1081,7 +1081,7 @@ function displayResponseView() {
     document.getElementById("response-section").style.display = "block";
     document.getElementById("response-detail-section").style.display = "none";
     document.getElementById("response-list-content").parentElement.style.display = "block";
-    document.getElementById("back-button").classList.add("show");
+    document.getElementById("back-button").classList.remove("show");
     
     // 更新導航按鈕
     updateNavButtons();
