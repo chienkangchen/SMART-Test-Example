@@ -504,6 +504,17 @@ function toggleJson() {
     }
 }
 
+/**
+ * 通用切換 JSON 區塊顯示/隱藏
+ * @param {string} elementId - 目標元素 ID
+ */
+function toggleViewer(elementId) {
+    const viewer = document.getElementById(elementId);
+    if (!viewer) return;
+    const isHidden = viewer.style.display === "none" || viewer.style.display === "";
+    viewer.style.display = isHidden ? "block" : "none";
+}
+
 // ============================================
 // 錯誤處理相關函式
 // ============================================
@@ -1141,22 +1152,27 @@ function renderNoResponses() {
  * @param {Array} observations - 相關的 Observation 資源陣列
  */
 function updateResponseJsonViewer(response, observations) {
-    const jsonViewer = document.getElementById("response-json-viewer");
-    const data = {
-        QuestionnaireResponse: response,
-        RelatedObservations: observations || []
-    };
-    jsonViewer.textContent = JSON.stringify(data, null, 2);
+    const responseViewer = document.getElementById("response-json-viewer");
+    if (responseViewer) {
+        responseViewer.textContent = JSON.stringify(response, null, 2);
+    }
+
+    const observationViewer = document.getElementById("observation-json-viewer");
+    if (observationViewer) {
+        observationViewer.textContent = JSON.stringify(observations || [], null, 2);
+    }
 }
 
 /**
  * 切換 Response JSON 查看器的顯示/隱藏狀態
  */
 function toggleResponseJson() {
-    const jsonViewer = document.getElementById("response-json-viewer");
-    if (jsonViewer.style.display === "none") {
-        jsonViewer.style.display = "block";
-    } else {
-        jsonViewer.style.display = "none";
-    }
+    toggleViewer("response-json-viewer");
+}
+
+/**
+ * 切換 Observation JSON 查看器的顯示/隱藏狀態
+ */
+function toggleObservationJson() {
+    toggleViewer("observation-json-viewer");
 }

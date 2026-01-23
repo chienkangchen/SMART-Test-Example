@@ -17,7 +17,11 @@
               // launch            - Get the launch context
               // openid & fhirUser - Get the current user
               // patient/*.read    - Read patient data
-              scope: "launch openid fhirUser patient/*.read",
+              // observation/*.read    - Read observation data
+              // organization/*.read    - Read organization data
+              // questionnaire/*.read    - Read questionnaire data
+              // questionnaireResponse/*.read    - Read questionnaireResponse data
+              scope: "launch openid fhirUser patient/*.read,observation/*.read,organization/*.read,questionnaire/*.read,questionnaireResponse/*.write",
 
               // Typically, if your redirectUri points to the root of the current directory
               // (where the launchUri is), you can omit this option because the default value is
