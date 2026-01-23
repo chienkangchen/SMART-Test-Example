@@ -1090,7 +1090,7 @@ function displayResponseView() {
     
     // 隱藏其他視圖
     document.getElementById("list-section").style.display = "none";
-    document.querySelectorAll(".questionnaire-info, .question-section, .toggle-json, .json-viewer").forEach(el => {
+    document.querySelectorAll(".questionnaire-info, .question-section, .json-viewer").forEach(el => {
         el.style.display = "none";
     });
     
