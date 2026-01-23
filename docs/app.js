@@ -830,7 +830,7 @@ function renderResponseList() {
 function extractQuestionnaireName(response) {
     const questionnaire = response.questionnaire || "";
     
-    // 直接從 questionnaire 欄位提取 ID
+    // 從 questionnaire 欄位提取 ID
     // questionnaire 可能是相對引用 (Questionnaire/{id}) 或完整 canonical URL
     if (questionnaire) {
         // 移除 canonical URL 中的版本號 (format: ...Questionnaire/{id}|{version})
@@ -839,7 +839,13 @@ function extractQuestionnaireName(response) {
         // 提取最後的 ID 部分
         const qId = cleanRef.split('/').pop();
         
-        // 直接返回提取的 ID，不查詢 allQuestionnaires
+        // 用提取的 ID 從問卷列表中查找對應的 Questionnaire
+        const foundQ = allQuestionnaires.find(q => q.id === qId);
+        if (foundQ) {
+            return foundQ.title || foundQ.name || qId;
+        }
+        
+        // 如果找不到，返回 ID
         return qId || "未知問卷";
     }
     
