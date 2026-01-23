@@ -23,15 +23,16 @@ let currentViewMode = 'list';         // 目前檢視模式：'list' 或 'detail
 let allQuestionnaires = [];           // 所有問卷列表（用於篩選）
 let filteredQuestionnaires = [];      // 篩選後的問卷列表
 
-// 篩選狀態
-let currentFilters = {
-    status: 'active',                 // 預設顯示使用中的問卷
-    search: ''                        // 目前的搜尋文字
-};
+// ============================================
+// 全域變數 - Response 相關
+// ============================================
 
-// ============================================
-// 初始化和主要流程
-// ============================================
+let allResponses = [];                // 所有 QuestionnaireResponse
+let allObservations = {};             // Observation 按 Response ID 分類
+let patientInfo = null;               // 患者信息
+let currentResponseId = null;         // 當前選中的 Response ID
+
+
 
 /**
  * 當 SMART on FHIR 客戶端初始化完成時執行
@@ -45,6 +46,9 @@ FHIR.oauth2.ready().then(function(fhirClient) {
 
     // 載入問卷列表
     loadQuestionnaireList(fhirClient);
+    
+    // 初始化 Response 查看
+    initializeResponseView();
     
     // 初始化顯示列表檢視
     showListView();
@@ -434,12 +438,16 @@ function renderQuestionItems(items, level = 0) {
 function showListView() {
     currentViewMode = 'list';
     document.getElementById("list-section").style.display = "block";
+    document.getElementById("response-section").style.display = "none";
     document.getElementById("back-button").classList.remove("show");
     
     // 隱藏詳細檢視元素
     document.querySelectorAll(".questionnaire-info, .question-section, .toggle-json, .json-viewer").forEach(el => {
         el.style.display = "none";
     });
+    
+    // 更新導航按鈕
+    updateNavButtons();
 }
 
 /**
@@ -448,6 +456,7 @@ function showListView() {
 function showDetailView() {
     currentViewMode = 'detail';
     document.getElementById("list-section").style.display = "none";
+    document.getElementById("response-section").style.display = "none";
     document.getElementById("back-button").classList.add("show");
     
     // 顯示詳細檢視元素
@@ -455,6 +464,9 @@ function showDetailView() {
         el.style.display = "block";
     });
     document.querySelector(".toggle-json").style.display = "block";
+    
+    // 更新導航按鈕
+    updateNavButtons();
 }
 
 // ============================================
@@ -563,4 +575,538 @@ function getTypeText(type) {
         'quantity': '數量'
     };
     return typeMap[type] || type;
+}
+// ============================================
+// QuestionnaireResponse 相關函式
+// ============================================
+
+/**
+ * 初始化 Response 查看功能
+ */
+function initializeResponseView() {
+    console.log("初始化 Response 查看...");
+    
+    // 檢查是否有患者上下文
+    if (client && client.patient) {
+        console.log("患者 ID:", client.patient.id);
+        loadPatientInfo();
+        loadPatientResponses();
+    } else {
+        console.warn("未找到患者上下文");
+        displayNoPatientInfo();
+    }
+}
+
+/**
+ * 加載患者信息
+ */
+function loadPatientInfo() {
+    const patientId = client.patient.id;
+    
+    client.request(FHIR_SERVER_URL + "/Patient/" + patientId)
+        .then(function(data) {
+            console.log("患者信息已獲取:", data);
+            patientInfo = data;
+            renderPatientInfo(data);
+        })
+        .catch(function(error) {
+            console.error("加載患者信息失敗:", error);
+            displayError("patient-info-content", "無法加載患者信息", error);
+        });
+}
+
+/**
+ * 渲染患者信息
+ * @param {Object} patient - Patient FHIR 資源
+ */
+function renderPatientInfo(patient) {
+    const container = document.getElementById("patient-info-content");
+    
+    // 提取患者名稱
+    let patientName = "未知";
+    if (patient.name && patient.name.length > 0) {
+        const nameObj = patient.name[0];
+        const given = nameObj.given ? nameObj.given.join(' ') : '';
+        const family = nameObj.family || '';
+        patientName = (family + given).trim() || "未知";
+    }
+    
+    // 提取性別
+    const gender = patient.gender || "未知";
+    const genderText = {
+        'male': '男性',
+        'female': '女性',
+        'other': '其他',
+        'unknown': '未知'
+    }[gender] || gender;
+    
+    // 提取出生日期
+    const birthDate = patient.birthDate || "未知";
+    
+    // 提取電話號碼
+    let contact = "未知";
+    if (patient.telecom && patient.telecom.length > 0) {
+        const phone = patient.telecom.find(t => t.system === 'phone');
+        if (phone) contact = phone.value;
+    }
+    
+    // 提取地址
+    let address = "未知";
+    if (patient.address && patient.address.length > 0) {
+        const addr = patient.address[0];
+        address = (addr.line ? addr.line.join(', ') + ' ' : '') + 
+                  (addr.city || '') + (addr.state || '') + (addr.postalCode || '');
+        if (!address.trim()) address = "未知";
+    }
+    
+    container.innerHTML = `
+        <div class="patient-info-grid">
+            <div class="patient-info-item">
+                <div class="label"><i class="fas fa-user"></i> 姓名</div>
+                <div class="value">${patientName}</div>
+            </div>
+            <div class="patient-info-item">
+                <div class="label"><i class="fas fa-id-card"></i> 患者 ID</div>
+                <div class="value">${patient.id}</div>
+            </div>
+            <div class="patient-info-item">
+                <div class="label"><i class="fas fa-cake-candles"></i> 出生日期</div>
+                <div class="value">${birthDate}</div>
+            </div>
+            <div class="patient-info-item">
+                <div class="label"><i class="fas fa-venus-mars"></i> 性別</div>
+                <div class="value">${genderText}</div>
+            </div>
+            <div class="patient-info-item">
+                <div class="label"><i class="fas fa-phone"></i> 聯絡方式</div>
+                <div class="value">${contact}</div>
+            </div>
+            <div class="patient-info-item">
+                <div class="label"><i class="fas fa-map-marker-alt"></i> 地址</div>
+                <div class="value">${address}</div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 加載患者的所有 QuestionnaireResponse
+ */
+function loadPatientResponses() {
+    const patientId = client.patient.id;
+    
+    // 查詢該患者的所有 QuestionnaireResponse，按最近填寫日期排序
+    client.request(FHIR_SERVER_URL + "/QuestionnaireResponse?patient=" + patientId + "&_sort=-authored&_count=100")
+        .then(function(data) {
+            console.log("QuestionnaireResponse 列表已獲取:", data);
+            
+            if (data.entry && data.entry.length > 0) {
+                // 提取所有 Response
+                allResponses = data.entry.map(entry => entry.resource);
+                console.log("找到 " + allResponses.length + " 個 QuestionnaireResponse");
+                
+                // 為每個 Response 加載相關的 Observation
+                loadAllRelatedObservations();
+                
+                // 渲染列表
+                renderResponseList();
+            } else {
+                renderNoResponses();
+            }
+        })
+        .catch(function(error) {
+            console.error("加載 QuestionnaireResponse 失敗:", error);
+            displayError("response-list-content", "無法加載問卷回應", error);
+        });
+}
+
+/**
+ * 加載所有 Response 的相關 Observation
+ */
+function loadAllRelatedObservations() {
+    // 為每個 Response 查詢相關的 Observation
+    allResponses.forEach(response => {
+        loadRelatedObservations(response.id);
+    });
+}
+
+/**
+ * 為特定 QuestionnaireResponse 加載相關的 Observation
+ * @param {string} responseId - QuestionnaireResponse 的 ID
+ */
+function loadRelatedObservations(responseId) {
+    const patientId = client.patient.id;
+    
+    // 查詢派生自此 Response 的 Observation
+    const query = FHIR_SERVER_URL + "/Observation?derived-from=QuestionnaireResponse/" + responseId + "&patient=" + patientId + "&_count=100";
+    
+    client.request(query)
+        .then(function(data) {
+            console.log("Observation for response " + responseId + ":", data);
+            
+            if (data.entry && data.entry.length > 0) {
+                allObservations[responseId] = data.entry.map(entry => entry.resource);
+            } else {
+                allObservations[responseId] = [];
+            }
+        })
+        .catch(function(error) {
+            console.warn("加載 Observation 失敗:", error);
+            allObservations[responseId] = [];
+        });
+}
+
+/**
+ * 渲染 QuestionnaireResponse 列表
+ */
+function renderResponseList() {
+    const container = document.getElementById("response-list-content");
+    
+    if (allResponses.length === 0) {
+        renderNoResponses();
+        return;
+    }
+    
+    // 按 authored 日期排序（最新在前）
+    const sortedResponses = [...allResponses].sort((a, b) => {
+        const dateA = a.authored ? new Date(a.authored).getTime() : 0;
+        const dateB = b.authored ? new Date(b.authored).getTime() : 0;
+        return dateB - dateA;
+    });
+    
+    const responseListHtml = sortedResponses.map(response => {
+        const questionnaireRef = response.questionnaire || "";
+        const questionnaireName = extractQuestionnaireName(response);
+        const authoredDate = response.authored 
+            ? new Date(response.authored).toLocaleDateString('zh-TW', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+            : "未知";
+        
+        // 獲取相關的 Observation 分數
+        const observations = allObservations[response.id] || [];
+        let scoreHtml = '';
+        if (observations.length > 0) {
+            const obs = observations[0]; // 通常只有一個主要分數
+            if (obs.valueQuantity && obs.valueQuantity.value !== undefined) {
+                scoreHtml = `<div class="response-score">${obs.valueQuantity.value}</div>`;
+            }
+        }
+        
+        const status = response.status || "unknown";
+        
+        return `
+            <div class="response-card" onclick="showResponseDetail('${response.id}')">
+                <div class="response-card-content">
+                    <div class="response-card-title">${questionnaireName}</div>
+                    <div class="response-card-date">
+                        <i class="fas fa-calendar-alt"></i> ${authoredDate}
+                    </div>
+                </div>
+                ${scoreHtml}
+                <div class="response-status">
+                    <span class="status-badge ${getStatusClass(status)}">${getStatusText(status)}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = `<div class="response-list">${responseListHtml}</div>`;
+}
+
+/**
+ * 提取 Questionnaire 名稱
+ * @param {Object} response - QuestionnaireResponse 資源
+ * @returns {string} Questionnaire 名稱
+ */
+function extractQuestionnaireName(response) {
+    const questionnaire = response.questionnaire || "";
+    
+    // 如果有 Questionnaire ID 參考，從問卷列表中查找
+    if (questionnaire) {
+        const qId = questionnaire.split('/').pop();
+        const foundQ = allQuestionnaires.find(q => q.id === qId);
+        if (foundQ) {
+            return foundQ.title || foundQ.name || qId;
+        }
+        return qId;
+    }
+    
+    return "未知問卷";
+}
+
+/**
+ * 顯示 Response 詳情
+ * @param {string} responseId - QuestionnaireResponse 的 ID
+ */
+function showResponseDetail(responseId) {
+    currentResponseId = responseId;
+    renderResponseDetail(responseId);
+    document.getElementById("response-list-content").parentElement.style.display = "none";
+    document.getElementById("response-detail-section").style.display = "block";
+}
+
+/**
+ * 隱藏 Response 詳情，返回列表
+ */
+function hideResponseDetail() {
+    currentResponseId = null;
+    document.getElementById("response-list-content").parentElement.style.display = "block";
+    document.getElementById("response-detail-section").style.display = "none";
+}
+
+/**
+ * 渲染 QuestionnaireResponse 詳情
+ * @param {string} responseId - QuestionnaireResponse 的 ID
+ */
+function renderResponseDetail(responseId) {
+    const response = allResponses.find(r => r.id === responseId);
+    if (!response) {
+        displayError("response-detail-content", "找不到回應", new Error("Response not found"));
+        return;
+    }
+    
+    const container = document.getElementById("response-detail-content");
+    
+    const questionnaireName = extractQuestionnaireName(response);
+    const authoredDate = response.authored 
+        ? new Date(response.authored).toLocaleDateString('zh-TW', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        : "未知";
+    
+    const status = response.status || "unknown";
+    
+    // 渲染答案項目
+    let answersHtml = '';
+    if (response.item && response.item.length > 0) {
+        answersHtml = renderResponseItems(response.item);
+    } else {
+        answersHtml = '<div style="padding: 20px; text-align: center; color: #666;">沒有答案記錄</div>';
+    }
+    
+    // 渲染相關的 Observation
+    let observationHtml = '';
+    const observations = allObservations[responseId] || [];
+    if (observations.length > 0) {
+        observationHtml = renderObservationDetails(observations);
+    } else {
+        observationHtml = '<div style="padding: 20px; background: #f5f5f5; border-radius: 8px; text-align: center; color: #999;">無相關觀察記錄</div>';
+    }
+    
+    container.innerHTML = `
+        <div class="response-header">
+            <h2><i class="fas fa-file-alt"></i> ${questionnaireName}</h2>
+            <div class="response-meta">
+                <div class="meta-item">
+                    <span class="meta-label">填寫日期：</span>
+                    <span class="meta-value">${authoredDate}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">狀態：</span>
+                    <span class="status-badge ${getStatusClass(status)}">${getStatusText(status)}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Response ID：</span>
+                    <span class="meta-value" style="font-family: monospace; font-size: 0.9rem;">${responseId}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="response-section-container">
+            <h3><i class="fas fa-question-circle"></i> 答案</h3>
+            <div class="response-answers">
+                ${answersHtml}
+            </div>
+        </div>
+        
+        <div class="response-section-container">
+            <h3><i class="fas fa-chart-line"></i> 相關觀察結果</h3>
+            <div class="response-observations">
+                ${observationHtml}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 遞迴渲染 QuestionnaireResponse 的答案項目
+ * @param {Array} items - Response 的 item 陣列
+ * @returns {string} 生成的 HTML 字串
+ */
+function renderResponseItems(items) {
+    return items.map((item, index) => {
+        const linkId = item.linkId || `item-${index}`;
+        const text = item.text || "無題目文字";
+        
+        // 渲染答案
+        let answerHtml = '';
+        if (item.answer && item.answer.length > 0) {
+            const answers = item.answer.map(answer => {
+                let answerText = '';
+                
+                if (answer.valueString) {
+                    answerText = answer.valueString;
+                } else if (answer.valueInteger !== undefined) {
+                    answerText = answer.valueInteger.toString();
+                } else if (answer.valueBoolean !== undefined) {
+                    answerText = answer.valueBoolean ? '是' : '否';
+                } else if (answer.valueDate) {
+                    answerText = answer.valueDate;
+                } else if (answer.valueDateTime) {
+                    answerText = new Date(answer.valueDateTime).toLocaleString('zh-TW');
+                } else if (answer.valueCoding) {
+                    answerText = answer.valueCoding.display || answer.valueCoding.code || '未知';
+                } else if (answer.valueDecimal !== undefined) {
+                    answerText = answer.valueDecimal.toString();
+                } else if (answer.valueQuantity) {
+                    answerText = (answer.valueQuantity.value || '') + ' ' + (answer.valueQuantity.unit || '');
+                } else {
+                    answerText = JSON.stringify(answer).substring(0, 100);
+                }
+                
+                return `<div class="response-answer-value"><i class="fas fa-check"></i> ${answerText}</div>`;
+            }).join('');
+            
+            answerHtml = `<div class="response-answers-container">${answers}</div>`;
+        } else {
+            answerHtml = '<div class="response-no-answer">未回答</div>';
+        }
+        
+        // 處理巢狀項目
+        let nestedHtml = '';
+        if (item.item && item.item.length > 0) {
+            nestedHtml = `<div class="nested-response-items">${renderResponseItems(item.item)}</div>`;
+        }
+        
+        return `
+            <div class="response-item">
+                <div class="response-item-header">
+                    <div class="response-item-linkid">${linkId}</div>
+                    <div class="response-item-text">${text}</div>
+                </div>
+                ${answerHtml}
+                ${nestedHtml}
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * 渲染 Observation 詳情
+ * @param {Array} observations - Observation 資源陣列
+ * @returns {string} 生成的 HTML 字串
+ */
+function renderObservationDetails(observations) {
+    return observations.map(obs => {
+        const code = obs.code ? (obs.code.text || obs.code.coding?.[0]?.display || '未知') : '未知';
+        const value = obs.valueQuantity ? 
+                      `${obs.valueQuantity.value} ${obs.valueQuantity.unit || ''}`.trim() : 
+                      '無值';
+        const effectiveDate = obs.effectiveDateTime 
+            ? new Date(obs.effectiveDateTime).toLocaleString('zh-TW')
+            : '未知';
+        const method = obs.method ? obs.method.text : '未知方法';
+        
+        // 渲染備註
+        let noteHtml = '';
+        if (obs.note && obs.note.length > 0) {
+            const notes = obs.note.map(note => 
+                `<div class="observation-note">${note.text}</div>`
+            ).join('');
+            noteHtml = `<div class="observation-notes">${notes}</div>`;
+        }
+        
+        return `
+            <div class="observation-card">
+                <div class="observation-header">
+                    <div class="observation-code">${code}</div>
+                    <div class="observation-value">${value}</div>
+                </div>
+                <div class="observation-details">
+                    <div class="observation-detail-item">
+                        <span class="detail-label">測量時間：</span>
+                        <span class="detail-value">${effectiveDate}</span>
+                    </div>
+                    <div class="observation-detail-item">
+                        <span class="detail-label">測量方法：</span>
+                        <span class="detail-value">${method}</span>
+                    </div>
+                </div>
+                ${noteHtml}
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * 切換到 Response 查看視圖
+ */
+function displayResponseView() {
+    currentViewMode = 'response';
+    
+    // 隱藏其他視圖
+    document.getElementById("list-section").style.display = "none";
+    document.querySelectorAll(".questionnaire-info, .question-section, .toggle-json, .json-viewer").forEach(el => {
+        el.style.display = "none";
+    });
+    
+    // 顯示 Response 視圖
+    document.getElementById("response-section").style.display = "block";
+    document.getElementById("response-detail-section").style.display = "none";
+    document.getElementById("response-list-content").parentElement.style.display = "block";
+    document.getElementById("back-button").classList.add("show");
+    
+    // 更新導航按鈕
+    updateNavButtons();
+}
+
+/**
+ * 更新導航按鈕的狀態
+ */
+function updateNavButtons() {
+    document.getElementById("nav-questionnaire").classList.remove("active");
+    document.getElementById("nav-response").classList.remove("active");
+    
+    if (currentViewMode === 'list') {
+        document.getElementById("nav-questionnaire").classList.add("active");
+    } else if (currentViewMode === 'response') {
+        document.getElementById("nav-response").classList.add("active");
+    }
+}
+
+/**
+ * 顯示沒有患者信息的消息
+ */
+function displayNoPatientInfo() {
+    const container = document.getElementById("patient-info-content");
+    container.innerHTML = `
+        <div style="text-align: center; padding: 30px; color: #666;">
+            <i class="fas fa-user-slash" style="font-size: 2rem; margin-bottom: 15px; display: block;"></i>
+            <h3>未找到患者信息</h3>
+            <p>此應用需要患者上下文才能查看問卷回應。</p>
+        </div>
+    `;
+}
+
+/**
+ * 顯示沒有 Response 的消息
+ */
+function renderNoResponses() {
+    const container = document.getElementById("response-list-content");
+    container.innerHTML = `
+        <div style="text-align: center; padding: 50px; color: #666;">
+            <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 15px; display: block;"></i>
+            <h3>沒有問卷回應</h3>
+            <p>該患者尚未填寫任何問卷。</p>
+        </div>
+    `;
 }

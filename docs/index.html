@@ -19,6 +19,18 @@
                 <!-- OAuth2 Debug Info (Hidden) -->
                 <div id="oauth2read"></div>
                 
+                <!-- Navigation Buttons -->
+                <div class="nav-buttons">
+                    <button class="nav-btn" id="nav-questionnaire" onclick="showListView()" title="問卷清單">
+                        <i class="fas fa-list"></i>
+                        <span>問卷</span>
+                    </button>
+                    <button class="nav-btn" id="nav-response" onclick="displayResponseView()" title="我的回應">
+                        <i class="fas fa-check-square"></i>
+                        <span>我的回應</span>
+                    </button>
+                </div>
+                
                 <!-- Back Button -->
                 <button class="back-button" id="back-button" onclick="showListView()">
                     <i class="fas fa-arrow-left"></i> 返回列表
@@ -88,7 +100,7 @@
 
                 <!-- Questions Section -->
                 <div class="question-section">
-                    <h2><i class="fas fa-question-circle"></i> 問卷題目預覽</h2>
+                    <h2><i class="fas fa-question-circle"></i> 問卷題目階層預覽</h2>
                     <div id="questions-content">
                         <div class="loading">
                             <i class="fas fa-spinner"></i>
@@ -102,6 +114,46 @@
                     <i class="fas fa-code"></i> 顯示/隱藏 JSON 原始資料
                 </button>
                 <div id="json-viewer" class="json-viewer" style="display: none;"></div>
+
+                <!-- QuestionnaireResponse Section -->
+                <div id="response-section" style="display: none;">
+                    <!-- Patient Information -->
+                    <div class="patient-info-card">
+                        <h2><i class="fas fa-user-circle"></i> 患者信息</h2>
+                        <div id="patient-info-content">
+                            <div class="loading">
+                                <i class="fas fa-spinner"></i>
+                                載入患者信息中...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Response List Section -->
+                    <div class="response-list-section">
+                        <h2><i class="fas fa-list-check"></i> 問卷回應</h2>
+                        <div id="response-list-content">
+                            <div class="loading">
+                                <i class="fas fa-spinner"></i>
+                                載入問卷回應中...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Response Detail Section -->
+                    <div id="response-detail-section" style="display: none;">
+                        <div class="response-detail-container">
+                            <button class="back-to-response-btn" onclick="hideResponseDetail()">
+                                <i class="fas fa-arrow-left"></i> 返回回應列表
+                            </button>
+                            <div id="response-detail-content">
+                                <div class="loading">
+                                    <i class="fas fa-spinner"></i>
+                                    載入回應詳情中...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

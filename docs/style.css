@@ -452,6 +452,40 @@ body {
     display: inline-block;
 }
 
+/* ============================================
+   導航按鈕樣式
+   ============================================ */
+
+.nav-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.nav-btn {
+    padding: 10px 20px;
+    border: 2px solid #2196F3;
+    background: white;
+    color: #2196F3;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+    background: #f0f7ff;
+}
+
+.nav-btn.active {
+    background: #2196F3;
+    color: white;
+}
+
 /* JSON 檢視切換按鈕 */
 .toggle-json {
     background: #607D8B;
@@ -482,6 +516,382 @@ body {
     max-height: 500px;
     overflow: auto;
     margin-top: 20px;
+}
+
+/* ============================================
+   QuestionnaireResponse 相關樣式
+   ============================================ */
+
+/* Response 視圖容器 */
+#response-section {
+    display: none;
+}
+
+/* 患者信息卡片 */
+.patient-info-card {
+    background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+.patient-info-card h2 {
+    color: white;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.patient-info-card h2 i {
+    margin-right: 10px;
+}
+
+.patient-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.patient-info-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+}
+
+.patient-info-item .label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.patient-info-item .value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+/* Response 列表區域 */
+.response-list-section {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    border-left: 5px solid #FF9800;
+}
+
+.response-list-section h2 {
+    color: #333;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.response-list-section h2 i {
+    margin-right: 10px;
+    color: #FF9800;
+}
+
+/* Response 列表 */
+.response-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Response 卡片 */
+.response-card {
+    background: white;
+    border-radius: 10px;
+    padding: 18px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    border-left: 4px solid #FF9800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.response-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateX(5px);
+    background: #fafafa;
+}
+
+.response-card-content {
+    flex: 1;
+}
+
+.response-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+.response-card-date {
+    font-size: 0.9rem;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.response-score {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #FF9800;
+    min-width: 60px;
+    text-align: center;
+}
+
+.response-status {
+    display: flex;
+    gap: 10px;
+}
+
+/* Response 詳情區域 */
+.response-detail-container {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.back-to-response-btn {
+    background: #FF9800;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s ease;
+}
+
+.back-to-response-btn:hover {
+    background: #F57C00;
+}
+
+.response-header {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+}
+
+.response-header h2 {
+    color: white;
+    margin-bottom: 15px;
+}
+
+.response-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.meta-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.meta-label {
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.meta-value {
+    color: white;
+}
+
+/* Response 區域容器 */
+.response-section-container {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #9C27B0;
+}
+
+.response-section-container h3 {
+    color: #333;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+}
+
+.response-section-container h3 i {
+    margin-right: 10px;
+    color: #9C27B0;
+}
+
+/* Response 答案 */
+.response-answers {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.response-item {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #9C27B0;
+}
+
+.response-item-header {
+    margin-bottom: 12px;
+}
+
+.response-item-linkid {
+    font-size: 0.8rem;
+    color: #666;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 4px;
+}
+
+.response-item-text {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.response-answers-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.response-answer-value {
+    padding: 8px 12px;
+    background: #e8f5e9;
+    border-radius: 6px;
+    color: #2e7d32;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.response-no-answer {
+    padding: 8px 12px;
+    background: #f5f5f5;
+    border-radius: 6px;
+    color: #999;
+    font-size: 0.95rem;
+}
+
+.nested-response-items {
+    margin-top: 15px;
+    margin-left: 20px;
+    padding-left: 15px;
+    border-left: 2px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Observation 相關樣式 */
+.response-observations {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.observation-card {
+    background: white;
+    padding: 18px;
+    border-radius: 10px;
+    border-left: 4px solid #2196F3;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.observation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.observation-code {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+}
+
+.observation-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2196F3;
+    min-width: 120px;
+    text-align: right;
+}
+
+.observation-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.observation-detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    background: #f5f5f5;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #555;
+}
+
+.detail-value {
+    color: #333;
+    text-align: right;
+}
+
+.observation-notes {
+    background: #fff3e0;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 3px solid #FF9800;
+    margin-top: 12px;
+}
+
+.observation-note {
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-bottom: 8px;
+}
+
+.observation-note:last-child {
+    margin-bottom: 0;
 }
 
 /* ============================================
@@ -579,6 +989,53 @@ body {
     /* JSON 檢視器高度調整 */
     .json-viewer {
         max-height: 300px;
+    }
+
+    /* Response 卡片調整 */
+    .response-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .response-score {
+        width: 100%;
+        text-align: left;
+    }
+
+    .response-meta {
+        flex-direction: column;
+    }
+
+    /* 患者信息網格調整 */
+    .patient-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Response 詳情調整 */
+    .response-header {
+        padding: 15px;
+    }
+
+    .response-section-container {
+        padding: 15px;
+    }
+
+    .nested-response-items {
+        margin-left: 10px;
+        padding-left: 10px;
+    }
+
+    /* Observation 調整 */
+    .observation-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .observation-value {
+        width: 100%;
+        text-align: left;
+        margin-top: 10px;
     }
 }
 
@@ -744,6 +1201,135 @@ body {
         padding: 30px;
         font-size: 1rem;
     }
+
+    /* 導航按鈕調整 */
+    .nav-buttons {
+        gap: 8px;
+    }
+
+    .nav-btn {
+        flex: 1;
+        padding: 10px;
+        font-size: 0.9rem;
+        justify-content: center;
+    }
+
+    .nav-btn span {
+        display: none;
+    }
+
+    /* Response 卡片調整 */
+    .response-card {
+        padding: 12px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .response-card-title {
+        font-size: 0.95rem;
+        line-height: 1.3;
+    }
+
+    .response-card-date {
+        font-size: 0.8rem;
+    }
+
+    .response-score {
+        width: 100%;
+        text-align: center;
+        margin: 8px 0;
+    }
+
+    /* 患者信息卡片調整 */
+    .patient-info-card {
+        padding: 15px;
+    }
+
+    .patient-info-card h2 {
+        font-size: 1.2rem;
+    }
+
+    .patient-info-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .patient-info-item {
+        padding: 10px;
+    }
+
+    .patient-info-item .label {
+        font-size: 0.8rem;
+    }
+
+    .patient-info-item .value {
+        font-size: 1rem;
+    }
+
+    /* Response 詳情調整 */
+    .response-detail-container {
+        padding: 15px;
+    }
+
+    .back-to-response-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .response-header {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+
+    .response-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .response-section-container {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+
+    .response-section-container h3 {
+        font-size: 1rem;
+    }
+
+    .response-item {
+        padding: 10px;
+    }
+
+    .response-item-text {
+        font-size: 0.95rem;
+    }
+
+    /* Observation 調整 */
+    .observation-card {
+        padding: 12px;
+    }
+
+    .observation-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .observation-code {
+        font-size: 1rem;
+    }
+
+    .observation-value {
+        width: 100%;
+        text-align: left;
+        margin-top: 10px;
+    }
+
+    .observation-details {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .observation-note {
+        font-size: 0.8rem;
+    }
 }
 
 /* 大螢幕 (1200px 以上) */
@@ -754,6 +1340,19 @@ body {
 
     .info-grid {
         grid-template-columns: repeat(3, 1fr);
+    }
+
+    .patient-info-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .response-meta {
+        flex-direction: row;
+        gap: 30px;
+    }
+
+    .meta-item {
+        border-bottom: none;
     }
 }
 
