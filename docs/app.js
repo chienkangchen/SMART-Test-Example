@@ -878,9 +878,8 @@ function showResponseDetail(responseId) {
     renderResponseDetail(responseId);
     document.getElementById("response-list-content").parentElement.style.display = "none";
     document.getElementById("response-detail-section").style.display = "block";
-    document.querySelectorAll(".toggle-json").forEach(el => {
-        el.style.display = "block";
-    });
+    document.querySelector(".toggle-response-json").style.display = "block";
+    document.querySelector(".toggle-observation-json").style.display = "block";
 }
 
 /**
@@ -890,9 +889,8 @@ function hideResponseDetail() {
     currentResponseId = null;
     document.getElementById("response-list-content").parentElement.style.display = "block";
     document.getElementById("response-detail-section").style.display = "none";
-    document.querySelectorAll(".toggle-json").forEach(el => {
-        el.style.display = "none";
-    });
+    document.querySelector(".toggle-response-json").style.display = "none";
+    document.querySelector(".toggle-observation-json").style.display = "none";
 }
 
 /**
