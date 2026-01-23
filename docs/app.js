@@ -878,6 +878,7 @@ function showResponseDetail(responseId) {
     renderResponseDetail(responseId);
     document.getElementById("response-list-content").parentElement.style.display = "none";
     document.getElementById("response-detail-section").style.display = "block";
+    document.getElementsByClassName("toggle-json").style.display = "block";
 }
 
 /**
@@ -887,6 +888,7 @@ function hideResponseDetail() {
     currentResponseId = null;
     document.getElementById("response-list-content").parentElement.style.display = "block";
     document.getElementById("response-detail-section").style.display = "none";
+    document.getElementsByClassName("toggle-json").style.display = "none";
 }
 
 /**
