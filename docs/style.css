@@ -177,11 +177,19 @@ body {
 .search-box {
     display: flex;
     align-items: center;
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 15px;
+    color: #999;
+    pointer-events: none;
 }
 
 .search-box input {
     flex: 1;
-    padding: 10px 15px;
+    padding: 10px 15px 10px 40px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 0.95rem;
@@ -577,11 +585,6 @@ body {
         font-size: 1.5rem;
     }
 
-    .header h1 i {
-        display: block;
-        margin-bottom: 8px;
-    }
-
     .header p {
         font-size: 0.85rem;
     }
@@ -590,35 +593,92 @@ body {
         padding: 15px;
     }
 
-    /* 篩選按鈕改為全寬 */
-    .status-filter {
-        flex-direction: column;
+    /* 篩選區域優化 */
+    .filter-section {
+        padding: 15px;
+    }
+
+    .filter-section h3 {
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+    }
+
+    /* 搜尋框全寬 */
+    .search-box {
+        position: relative;
+    }
+
+    .search-box input {
+        font-size: 0.9rem;
+        padding: 10px 15px 10px 40px;
         width: 100%;
     }
 
-    .status-filter-btn,
+    .search-box i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    /* 狀態篩選按鈕優化 */
+    .status-filter {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .status-filter-btn {
+        flex: 1;
+        padding: 10px 8px;
+        font-size: 0.85rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .status-filter-btn i {
+        font-size: 1.1rem;
+    }
+
     .filter-reset-btn {
         width: 100%;
-        text-align: center;
+        padding: 10px;
+        font-size: 0.9rem;
+        margin-top: 8px;
     }
 
     /* 問卷卡片標題調整 */
+    .questionnaire-card {
+        padding: 12px;
+    }
+
     .questionnaire-card-title {
         font-size: 0.95rem;
+        line-height: 1.3;
     }
 
     .questionnaire-card-id {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         word-break: break-all;
+        margin-bottom: 6px;
     }
 
     .questionnaire-card-desc {
         font-size: 0.8rem;
+        line-height: 1.3;
     }
 
     .questionnaire-card-meta {
         font-size: 0.75rem;
         width: 100%;
+        gap: 6px;
+    }
+
+    .questionnaire-card-meta span {
+        white-space: nowrap;
     }
 
     /* 資訊項目調整 */
@@ -637,6 +697,7 @@ body {
     /* 題目文字調整 */
     .question-text {
         font-size: 1rem;
+        line-height: 1.4;
     }
 
     .question-link-id {
@@ -655,16 +716,16 @@ body {
         padding: 6px 10px;
     }
 
-    /* 搜尋框調整 */
-    .search-box input {
-        font-size: 0.9rem;
-        padding: 8px 12px 8px 35px;
-    }
-
     /* 狀態徽章調整 */
     .status-badge {
         font-size: 0.75rem;
         padding: 4px 12px;
+    }
+
+    /* 載入動畫調整 */
+    .loading {
+        padding: 30px;
+        font-size: 1rem;
     }
 }
 
