@@ -100,6 +100,11 @@ function displayQuestionnaireList(entries) {
 
     // 初始化篩選結果
     applyFilters();
+    
+    // 如果回應列表已經載入，重新渲染以顯示完整的問卷標題
+    if (allResponses.length > 0) {
+        renderResponseList();
+    }
 }
 
 /**
