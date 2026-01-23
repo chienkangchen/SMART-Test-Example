@@ -260,6 +260,77 @@
                 background: #455A64;
             }
 
+            .questionnaire-list {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 20px;
+            }
+
+            .questionnaire-card {
+                background: white;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border-left: 4px solid #2196F3;
+                cursor: pointer;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+
+            .questionnaire-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            }
+
+            .questionnaire-card-title {
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: #333;
+                margin-bottom: 8px;
+            }
+
+            .questionnaire-card-id {
+                font-size: 0.85rem;
+                color: #666;
+                font-family: 'Courier New', monospace;
+                margin-bottom: 10px;
+                word-break: break-all;
+            }
+
+            .questionnaire-card-desc {
+                font-size: 0.9rem;
+                color: #555;
+                margin-bottom: 10px;
+                line-height: 1.4;
+            }
+
+            .questionnaire-card-meta {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 0.85rem;
+                color: #777;
+            }
+
+            .back-button {
+                background: #9C27B0;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                margin-bottom: 20px;
+                font-size: 1rem;
+                display: none;
+            }
+
+            .back-button:hover {
+                background: #7B1FA2;
+            }
+
+            .back-button.show {
+                display: inline-block;
+            }
+
             #oauth2read {
                 display: none;
             }
@@ -275,6 +346,26 @@
             <div class="content">
                 <!-- OAuth2 Debug Info (Hidden) -->
                 <div id="oauth2read"></div>
+                
+                <!-- Back Button -->
+                <button class="back-button" id="back-button" onclick="showListView()">
+                    <i class="fas fa-arrow-left"></i> 返回列表
+                </button>
+
+                <!-- Questionnaire List Section -->
+                <div id="list-section" style="display: none;">
+                    <div style="background: #f8f9fa; border-radius: 15px; padding: 25px; margin-bottom: 30px; border-left: 5px solid #2196F3;">
+                        <h2 style="color: #333; margin-bottom: 15px; display: flex; align-items: center;">
+                            <i class="fas fa-list" style="margin-right: 10px; color: #2196F3;"></i> 問卷列表
+                        </h2>
+                        <div id="questionnaire-list-content">
+                            <div class="loading">
+                                <i class="fas fa-spinner"></i>
+                                載入問卷列表中...
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- Questionnaire Information -->
                 <div class="questionnaire-info">
@@ -307,40 +398,118 @@
         </div>
 
         <script type="text/javascript">
-            // Questionnaire ID to fetch
-            const QUESTIONNAIRE_URL = "https://thas.mohw.gov.tw/v/r4/fhir/Questionnaire/2c98768c-26a0-4bf5-903e-4f6151ca31b9";
+            // FHIR Server base URL
+            const FHIR_SERVER_URL = "https://thas.mohw.gov.tw/v/r4/fhir";
             
+            let client = null;
             let questionnaireData = null;
+            let currentViewMode = 'list'; // 'list' or 'detail'
 
-            FHIR.oauth2.ready().then(function(client) {
-                console.log("SMART on FHIR Client:", client);
+            FHIR.oauth2.ready().then(function(fhirClient) {
+                console.log("SMART on FHIR Client:", fhirClient);
+                client = fhirClient;
                 // Store OAuth2 info (hidden from UI)
-                document.getElementById("oauth2read").innerText = JSON.stringify(client, null, 4);
+                document.getElementById("oauth2read").innerText = JSON.stringify(fhirClient, null, 4);
 
-                // Fetch the Questionnaire
-                fetchQuestionnaire(client);
+                // Load questionnaire list
+                loadQuestionnaireList(fhirClient);
+                showListView();
 
             }).catch(function(error) {
                 console.error("SMART on FHIR 初始化失敗:", error);
-                displayError("questionnaire-info-content", "SMART on FHIR 連線失敗", error);
-                displayError("questions-content", "SMART on FHIR 連線失敗", error);
+                displayError("questionnaire-list-content", "SMART on FHIR 連線失敗", error);
             });
 
-            function fetchQuestionnaire(client) {
-                // Make a direct request to the Questionnaire URL
-                client.request(QUESTIONNAIRE_URL)
+            function loadQuestionnaireList(fhirClient) {
+                // Fetch all Questionnaires from the server
+                fhirClient.request(FHIR_SERVER_URL + "/Questionnaire?_count=100")
                     .then(function(data) {
-                        console.log("Questionnaire data:", data);
+                        console.log("Questionnaire list:", data);
+                        if (data.entry && data.entry.length > 0) {
+                            displayQuestionnaireList(data.entry);
+                        } else {
+                            displayNoQuestionnaires();
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error("載入問卷列表失敗:", error);
+                        displayError("questionnaire-list-content", "載入問卷列表時發生錯誤", error);
+                    });
+            }
+
+            function displayQuestionnaireList(entries) {
+                const container = document.getElementById("questionnaire-list-content");
+                const questionnaires = entries.map(entry => entry.resource).filter(q => q.resourceType === "Questionnaire");
+
+                if (questionnaires.length === 0) {
+                    displayNoQuestionnaires();
+                    return;
+                }
+
+                const listHtml = questionnaires.map(q => `
+                    <div class="questionnaire-card" onclick="loadQuestionnaireDetail('${q.id}')">
+                        <div class="questionnaire-card-title">${q.title || q.name || "未命名問卷"}</div>
+                        <div class="questionnaire-card-id">ID: ${q.id}</div>
+                        <div class="questionnaire-card-desc">${q.description || "無描述"}</div>
+                        <div class="questionnaire-card-meta">
+                            <span><i class="fas fa-flag"></i> ${getStatusText(q.status)}</span>
+                            <span><i class="fas fa-question"></i> ${(q.item && q.item.length) || 0} 題目</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                container.innerHTML = `<div class="questionnaire-list">${listHtml}</div>`;
+            }
+
+            function displayNoQuestionnaires() {
+                const container = document.getElementById("questionnaire-list-content");
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: #666;">
+                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 15px; display: block;"></i>
+                        <h3>沒有找到問卷</h3>
+                        <p>此 FHIR 伺服器上沒有任何 Questionnaire 資源。</p>
+                    </div>
+                `;
+            }
+
+            function loadQuestionnaireDetail(questionnaireId) {
+                // Fetch the specific Questionnaire
+                client.request(FHIR_SERVER_URL + "/Questionnaire/" + questionnaireId)
+                    .then(function(data) {
+                        console.log("Questionnaire detail:", data);
                         questionnaireData = data;
                         displayQuestionnaireInfo(data);
                         displayQuestions(data);
                         updateJsonViewer(data);
+                        showDetailView();
                     })
                     .catch(function(error) {
                         console.error("載入問卷失敗:", error);
                         displayError("questionnaire-info-content", "載入問卷資料時發生錯誤", error);
-                        displayError("questions-content", "載入問卷資料時發生錯誤", error);
                     });
+            }
+
+            function showListView() {
+                currentViewMode = 'list';
+                document.getElementById("list-section").style.display = "block";
+                document.getElementById("back-button").classList.remove("show");
+                document.querySelectorAll(".questionnaire-info, .question-section, .toggle-json, .json-viewer").forEach(el => {
+                    if (el.classList.contains("json-viewer")) {
+                        el.style.display = "none";
+                    } else if (el.classList.contains("toggle-json")) {
+                        el.style.display = "none";
+                    } else {
+                        el.style.display = "none";
+                    }
+                });
+            }
+
+            function showDetailView() {
+                currentViewMode = 'detail';
+                document.getElementById("list-section").style.display = "none";
+                document.getElementById("back-button").classList.add("show");
+                document.querySelectorAll(".questionnaire-info, .question-section").forEach(el => el.style.display = "block");
+                document.querySelector(".toggle-json").style.display = "block";
             }
 
             function displayQuestionnaireInfo(questionnaire) {
