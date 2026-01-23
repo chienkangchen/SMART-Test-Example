@@ -72,7 +72,7 @@ FHIR.oauth2.ready().then(function(fhirClient) {
  */
 function loadQuestionnaireList(fhirClient) {
     // 向 FHIR 伺服器請求所有 Questionnaire
-    fhirClient.request(FHIR_SERVER_URL + "/Questionnaire?count=1000")
+    fhirClient.request(FHIR_SERVER_URL + "/Questionnaire?_count=1000")
         .then(function(data) {
             console.log("問卷列表已獲取:", data);
             
