@@ -359,10 +359,13 @@ function renderQuestionItems(items, level = 0) {
         const linkId = item.linkId || `question-${index}`;
         const text = item.text || "無題目文字";
         let type = item.type || "unknown";
+        let displayType = type;
         
         // 如果是可重複的 choice 類型，改為複選
+        let isMultiChoice = false;
         if (item.repeats && type === 'choice') {
-            type = 'multi-choice';
+            displayType = 'multi-choice';
+            isMultiChoice = true;
         }
         
         // 必填標籤
@@ -370,8 +373,8 @@ function renderQuestionItems(items, level = 0) {
             ? '<span class="question-required"><i class="fas fa-asterisk"></i> 必填</span>' 
             : '';
         
-        // 可重複標籤
-        const repeats = item.repeats 
+        // 可重複標籤（複選時不顯示）
+        const repeats = (item.repeats && !isMultiChoice)
             ? '<span class="question-required" style="background: #fff3e0; color: #f57c00;"><i class="fas fa-repeat"></i> 可重複</span>' 
             : '';
         
@@ -410,7 +413,7 @@ function renderQuestionItems(items, level = 0) {
                 <div class="question-link-id"><i class="fas fa-link"></i> ${linkId}</div>
                 <div class="question-text">${text}</div>
                 <div>
-                    <span class="question-type">${getTypeText(type)}</span>
+                    <span class="question-type">${getTypeText(displayType)}</span>
                     ${required}
                     ${repeats}
                 </div>
