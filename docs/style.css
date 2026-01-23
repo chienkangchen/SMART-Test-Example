@@ -134,12 +134,13 @@ body {
 
 .questionnaire-card-meta {
     display: flex;
-    gap: 15px;
+    gap: 12px;
     align-items: center;
     font-size: 0.85rem;
     color: #777;
     flex-shrink: 0;
     margin-left: 20px;
+    white-space: nowrap;
 }
 
 /* ============================================
@@ -487,4 +488,265 @@ body {
 
 #oauth2read {
     display: none;
+}
+
+/* ============================================
+   響應式設計 (RWD)
+   ============================================ */
+
+/* 平板裝置 (768px 以下) */
+@media screen and (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        border-radius: 12px;
+    }
+
+    .header h1 {
+        font-size: 1.8rem;
+    }
+
+    .header p {
+        font-size: 0.95rem;
+    }
+
+    .content {
+        padding: 20px;
+    }
+
+    /* 篩選區域改為垂直排列 */
+    .filter-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    /* 問卷卡片在小螢幕上改為垂直排列 */
+    .questionnaire-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .questionnaire-card-meta {
+        margin-left: 0;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* 資訊網格調整 */
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* 題目項目調整 */
+    .question-item {
+        padding: 15px;
+    }
+
+    .nested-items {
+        margin-left: 15px;
+        padding-left: 10px;
+    }
+
+    /* 按鈕調整 */
+    .back-button,
+    .toggle-json {
+        width: 100%;
+        margin-bottom: 15px;
+    }
+
+    /* JSON 檢視器高度調整 */
+    .json-viewer {
+        max-height: 300px;
+    }
+}
+
+/* 手機裝置 (480px 以下) */
+@media screen and (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+
+    .header {
+        padding: 20px 15px;
+    }
+
+    .header h1 {
+        font-size: 1.5rem;
+    }
+
+    .header h1 i {
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .header p {
+        font-size: 0.85rem;
+    }
+
+    .content {
+        padding: 15px;
+    }
+
+    /* 篩選按鈕改為全寬 */
+    .status-filter {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .status-filter-btn,
+    .filter-reset-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* 問卷卡片標題調整 */
+    .questionnaire-card-title {
+        font-size: 0.95rem;
+    }
+
+    .questionnaire-card-id {
+        font-size: 0.75rem;
+        word-break: break-all;
+    }
+
+    .questionnaire-card-desc {
+        font-size: 0.8rem;
+    }
+
+    .questionnaire-card-meta {
+        font-size: 0.75rem;
+        width: 100%;
+    }
+
+    /* 資訊項目調整 */
+    .info-item {
+        padding: 12px;
+    }
+
+    .info-item .label {
+        font-size: 0.85rem;
+    }
+
+    .info-item .value {
+        font-size: 1rem;
+    }
+
+    /* 題目文字調整 */
+    .question-text {
+        font-size: 1rem;
+    }
+
+    .question-link-id {
+        font-size: 0.75rem;
+    }
+
+    .question-type,
+    .question-required {
+        font-size: 0.75rem;
+        padding: 3px 10px;
+    }
+
+    /* 答案選項調整 */
+    .answer-option {
+        font-size: 0.85rem;
+        padding: 6px 10px;
+    }
+
+    /* 搜尋框調整 */
+    .search-box input {
+        font-size: 0.9rem;
+        padding: 8px 12px 8px 35px;
+    }
+
+    /* 狀態徽章調整 */
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 4px 12px;
+    }
+}
+
+/* 大螢幕 (1200px 以上) */
+@media screen and (min-width: 1200px) {
+    .container {
+        max-width: 1400px;
+    }
+
+    .info-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* 超大螢幕 (1600px 以上) */
+@media screen and (min-width: 1600px) {
+    .container {
+        max-width: 1600px;
+    }
+
+    .info-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* 觸控裝置優化 */
+@media (hover: none) and (pointer: coarse) {
+    /* 增加可點擊區域 */
+    .questionnaire-card {
+        min-height: 60px;
+    }
+
+    .back-button,
+    .toggle-json,
+    .status-filter-btn,
+    .filter-reset-btn {
+        min-height: 44px;
+        padding: 12px 20px;
+    }
+
+    /* 移除 hover 效果，因為觸控裝置沒有 hover */
+    .questionnaire-card:hover {
+        transform: none;
+    }
+
+    .question-item:hover {
+        transform: none;
+    }
+}
+
+/* 列印樣式 */
+@media print {
+    body {
+        background: white;
+        padding: 0;
+    }
+
+    .container {
+        box-shadow: none;
+    }
+
+    .header {
+        background: #2196F3 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .back-button,
+    .toggle-json,
+    .filter-section {
+        display: none !important;
+    }
+
+    .json-viewer {
+        display: none !important;
+    }
+
+    .questionnaire-card {
+        page-break-inside: avoid;
+    }
+
+    .question-item {
+        page-break-inside: avoid;
+    }
 }

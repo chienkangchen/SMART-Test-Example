@@ -25,7 +25,7 @@ let filteredQuestionnaires = [];      // 篩選後的問卷列表
 
 // 篩選狀態
 let currentFilters = {
-    status: null,                     // 目前選中的狀態篩選
+    status: 'active',                 // 預設顯示使用中的問卷
     search: ''                        // 目前的搜尋文字
 };
 
@@ -136,19 +136,32 @@ function renderQuestionnaireList() {
     }
 
     // 為每個問卷生成列表項目 HTML
-    const listHtml = filteredQuestionnaires.map(q => `
-        <div class="questionnaire-card" onclick="loadQuestionnaireDetail('${q.id}')">
-            <div class="questionnaire-card-content">
-                <div class="questionnaire-card-title">${q.title || q.name || "未命名問卷"}</div>
-                <div class="questionnaire-card-id">ID: ${q.id}</div>
-                ${q.description ? `<div class="questionnaire-card-desc">${q.description}</div>` : ''}
+    const listHtml = filteredQuestionnaires.map(q => {
+        const version = q.version || "1.0";
+        const updateDate = q.date 
+            ? new Date(q.date).toLocaleDateString('zh-TW', { 
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+              })
+            : "未知";
+        
+        return `
+            <div class="questionnaire-card" onclick="loadQuestionnaireDetail('${q.id}')">
+                <div class="questionnaire-card-content">
+                    <div class="questionnaire-card-title">${q.title || q.name || "未命名問卷"}</div>
+                    <div class="questionnaire-card-id">ID: ${q.id}</div>
+                    ${q.description ? `<div class="questionnaire-card-desc">${q.description}</div>` : ''}
+                </div>
+                <div class="questionnaire-card-meta">
+                    <span title="版本"><i class="fas fa-code-branch"></i> v${version}</span>
+                    <span title="最後更新"><i class="fas fa-calendar-alt"></i> ${updateDate}</span>
+                    <span><i class="fas fa-flag"></i> ${getStatusText(q.status)}</span>
+                    <span><i class="fas fa-question"></i> ${(q.item && q.item.length) || 0}</span>
+                </div>
             </div>
-            <div class="questionnaire-card-meta">
-                <span><i class="fas fa-flag"></i> ${getStatusText(q.status)}</span>
-                <span><i class="fas fa-question"></i> ${(q.item && q.item.length) || 0}</span>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
     container.innerHTML = `<div class="questionnaire-list">${listHtml}</div>`;
 }
