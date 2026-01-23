@@ -370,18 +370,16 @@ function displayQuestions(questionnaire) {
 }
 
 /**
- * 檢查問卷是否適合表格模式（所有非群組題目都是 choice 類型）
+ * 檢查問卷是否適合表格模式（有 3 個以上的 choice 類型題目）
  * @param {Array} items - 問卷項目陣列
  * @returns {boolean}
  */
 function isTableModeApplicable(items) {
-    // 如果少於 3 個題目，不用表格模式
-    if (items.length < 3) return false;
+    // 計算 choice 類型的題目數量
+    const choiceCount = items.filter(item => item.type === 'choice').length;
     
-    // 檢查所有非群組題目是否都是 choice 類型
-    return items.every(item => {
-        return item.type === 'choice' || item.type === 'group';
-    });
+    // 如果有 3 個以上的 choice 題目，使用表格模式
+    return choiceCount >= 3;
 }
 
 /**
@@ -390,10 +388,11 @@ function isTableModeApplicable(items) {
  * @returns {string} 生成的 HTML 字串
  */
 function renderQuestionnaireAsTable(items) {
-    // 過濾出非群組的 choice 題目
-    const choiceItems = items.filter(item => item.type === 'choice' && !item.type === 'group');
+    // 過濾出所有 choice 類型的題目
+    const choiceItems = items.filter(item => item.type === 'choice');
     
-    if (choiceItems.length === 0) {
+    if (choiceItems.length < 3) {
+        // 如果 choice 題目少於 3 個，使用列表模式
         return renderQuestionItems(items);
     }
     
@@ -470,7 +469,14 @@ function renderQuestionnaireAsTable(items) {
     // 添加使用說明
     const description = '<div class="table-description"><i class="fas fa-info-circle"></i> 請根據您的情況選擇合適的選項</div>';
     
-    return description + tableHtml;
+    // 如果還有其他非 choice 類型的項目（如群組），也一起顯示
+    const otherItems = items.filter(item => item.type !== 'choice');
+    let otherHtml = '';
+    if (otherItems.length > 0) {
+        otherHtml = renderQuestionItems(otherItems);
+    }
+    
+    return description + tableHtml + otherHtml;
 }
 
 /**
