@@ -830,14 +830,17 @@ function renderResponseList() {
 function extractQuestionnaireName(response) {
     const questionnaire = response.questionnaire || "";
     
-    // 如果有 Questionnaire ID 參考，從問卷列表中查找
+    // 直接從 questionnaire 欄位提取 ID
+    // questionnaire 可能是相對引用 (Questionnaire/{id}) 或完整 canonical URL
     if (questionnaire) {
-        const qId = questionnaire.split('/').pop();
-        const foundQ = allQuestionnaires.find(q => q.id === qId);
-        if (foundQ) {
-            return foundQ.title || foundQ.name || qId;
-        }
-        return qId;
+        // 移除 canonical URL 中的版本號 (format: ...Questionnaire/{id}|{version})
+        let cleanRef = questionnaire.split('|')[0];
+        
+        // 提取最後的 ID 部分
+        const qId = cleanRef.split('/').pop();
+        
+        // 直接返回提取的 ID，不查詢 allQuestionnaires
+        return qId || "未知問卷";
     }
     
     return "未知問卷";
