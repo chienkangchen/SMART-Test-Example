@@ -706,7 +706,7 @@ function loadPatientResponses() {
     const patientId = client.patient.id;
     
     // 查詢該患者的所有 QuestionnaireResponse，按最近填寫日期排序
-    client.request(FHIR_SERVER_URL + "/QuestionnaireResponse?patient=" + patientId + "&_sort=-authored&_count=100")
+    client.request(FHIR_SERVER_URL + "/QuestionnaireResponse?patient=" + patientId + "&_sort=-authored&_count=1000")
         .then(function(data) {
             console.log("QuestionnaireResponse 列表已獲取:", data);
             
@@ -988,9 +988,7 @@ function renderResponseItems(items) {
                 } else if (answer.valueCoding) {
                     answerText = answer.valueCoding.display || answer.valueCoding.code || '未知';
                     // 如果同時有 valueDecimal，添加到顯示中
-                    if (answer.extension?.[0]?.valueDecimal !== undefined) {
-                        answerText += ` (${answer.extension?.[0]?.valueDecimal})`;
-                    }
+                    answerText += answer.extension?.[0]?.valueDecimal !== undefined ? ` (${answer.extension?.[0]?.valueDecimal})` : '';
                 } else if (answer.valueDecimal !== undefined) {
                     answerText = answer.valueDecimal.toString();
                 } else if (answer.valueQuantity) {
