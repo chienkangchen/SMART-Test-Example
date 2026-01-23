@@ -400,9 +400,8 @@ function renderQuestionItems(items, level = 0) {
                 // 從不同的選項值類型提取文字
                 if (option.valueCoding) {
                     optionText = option.valueCoding.display || option.valueCoding.code || '';
-                    if( option.valueCoding.extension?.[0]?.valueDecimal !== undefined) {
-                        optionText += ` (${option.valueCoding.extension?.[0]?.valueDecimal})`;
-                    }
+                    console.log("option.valueCoding.extension?.[0]?.valueDecimal = ",option.valueCoding.extension?.[0]?.valueDecimal);
+                    optionText += option.valueCoding.extension?.[0]?.valueDecimal !== undefined ? ` (${option.valueCoding.extension?.[0]?.valueDecimal})` : '';
                 } else if (option.valueString) {
                     optionText = option.valueString;
                 } else if (option.valueInteger !== undefined) {
@@ -410,7 +409,6 @@ function renderQuestionItems(items, level = 0) {
                 } else if (option.valueDate) {
                     optionText = option.valueDate;
                 }
-                
                 return `<div class="answer-option"><i class="fas fa-check-circle"></i> ${optionText}</div>`;
             }).join('');
             
