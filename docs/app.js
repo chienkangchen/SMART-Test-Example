@@ -117,6 +117,23 @@ function applyFilters() {
         });
     }
 
+    // 排序：先按狀態（active 在前），再按日期（最新在前）
+    filteredQuestionnaires.sort((a, b) => {
+        // 首先按狀態排序（使用中 active 優先）
+        const statusOrder = { 'active': 0, 'draft': 1 };
+        const statusA = statusOrder[a.status] || 2;
+        const statusB = statusOrder[b.status] || 2;
+        
+        if (statusA !== statusB) {
+            return statusA - statusB;
+        }
+        
+        // 同狀態下按日期排序（最新在前）
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        return dateB - dateA;
+    });
+
     // 顯示篩選結果
     renderQuestionnaireList();
     
