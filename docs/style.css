@@ -205,6 +205,7 @@ body {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .status-filter-btn {
@@ -216,6 +217,13 @@ body {
     cursor: pointer;
     font-size: 0.9rem;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-filter-btn i {
+    font-size: 0.9rem;
 }
 
 .status-filter-btn:hover {
@@ -238,6 +246,9 @@ body {
     cursor: pointer;
     font-size: 0.9rem;
     transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .filter-reset-btn:hover {
@@ -603,6 +614,42 @@ body {
         margin-bottom: 12px;
     }
 
+    /* 隱藏桌面版的「狀態：」標籤 */
+    .desktop-label {
+        display: none !important;
+    }
+
+    /* 篩選列改為垂直排列 */
+    .filter-row > div:last-child {
+        width: 100%;
+        flex-direction: column;
+        gap: 8px !important;
+    }
+
+    /* 狀態篩選按鈕改為水平排列，平分寬度 */
+    .status-filter-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 10px 8px;
+        font-size: 0.85rem;
+    }
+
+    /* 草稿和使用中按鈕容器 */
+    .filter-row > div:last-child > .status-filter-btn:first-of-type,
+    .filter-row > div:last-child > .status-filter-btn:nth-of-type(2) {
+        display: inline-flex;
+        width: calc(50% - 4px);
+    }
+
+    /* 清除篩選按鈕獨立一行 */
+    .filter-reset-btn {
+        width: 100% !important;
+        justify-content: center;
+        padding: 10px;
+        font-size: 0.9rem;
+        margin-top: 0;
+    }
+
     /* 搜尋框全寬 */
     .search-box {
         position: relative;
@@ -619,35 +666,6 @@ body {
         left: 15px;
         top: 50%;
         transform: translateY(-50%);
-    }
-
-    /* 狀態篩選按鈕優化 */
-    .status-filter {
-        display: flex;
-        gap: 8px;
-        width: 100%;
-    }
-
-    .status-filter-btn {
-        flex: 1;
-        padding: 10px 8px;
-        font-size: 0.85rem;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .status-filter-btn i {
-        font-size: 1.1rem;
-    }
-
-    .filter-reset-btn {
-        width: 100%;
-        padding: 10px;
-        font-size: 0.9rem;
-        margin-top: 8px;
     }
 
     /* 問卷卡片標題調整 */
