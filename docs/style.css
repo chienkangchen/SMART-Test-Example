@@ -1,0 +1,381 @@
+/* ============================================
+   全域樣式設定
+   ============================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 主體背景樣式 */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* ============================================
+   容器和佈局樣式
+   ============================================ */
+
+/* 主容器 */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+/* 頁頭樣式 */
+.header {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    font-weight: 300;
+}
+
+.header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* 內容區域 */
+.content {
+    padding: 30px;
+}
+
+/* ============================================
+   載入狀態樣式
+   ============================================ */
+
+.loading {
+    text-align: center;
+    padding: 50px;
+    color: #666;
+    font-size: 1.2rem;
+}
+
+.loading i {
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+    font-size: 1.5rem;
+}
+
+/* 旋轉動畫 */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ============================================
+   問卷列表樣式
+   ============================================ */
+
+.questionnaire-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* 問卷卡片樣式 */
+.questionnaire-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-left: 4px solid #2196F3;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.questionnaire-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
+
+.questionnaire-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.questionnaire-card-id {
+    font-size: 0.85rem;
+    color: #666;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 10px;
+    word-break: break-all;
+}
+
+.questionnaire-card-desc {
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.questionnaire-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #777;
+}
+
+/* ============================================
+   問卷資訊區域樣式
+   ============================================ */
+
+.questionnaire-info {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    border-left: 5px solid #2196F3;
+}
+
+.questionnaire-info h2 {
+    color: #333;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.questionnaire-info h2 i {
+    margin-right: 10px;
+    color: #2196F3;
+}
+
+/* 資訊網格 */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.info-item {
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.info-item .label {
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.info-item .value {
+    color: #333;
+    font-size: 1.1rem;
+}
+
+/* 狀態徽章 */
+.status-badge {
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-active {
+    background: #e8f5e8;
+    color: #4CAF50;
+}
+
+.status-draft {
+    background: #fff3e0;
+    color: #ff9800;
+}
+
+/* ============================================
+   問卷題目樣式
+   ============================================ */
+
+.question-section {
+    margin-top: 30px;
+}
+
+.question-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.question-section h2 i {
+    margin-right: 10px;
+    color: #9C27B0;
+}
+
+/* 題目項目卡片 */
+.question-item {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-left: 4px solid #9C27B0;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.question-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.question-link-id {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 8px;
+    font-family: 'Courier New', monospace;
+}
+
+.question-text {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+/* 題目類型標籤 */
+.question-type {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #e3f2fd;
+    color: #1976D2;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+/* 必填/可重複標籤 */
+.question-required {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #ffebee;
+    color: #c62828;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+/* 答案選項 */
+.answer-options {
+    margin-top: 15px;
+    padding-left: 20px;
+}
+
+.answer-option {
+    padding: 8px 12px;
+    margin: 5px 0;
+    background: #f5f5f5;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+/* 嵌套項目 */
+.nested-items {
+    margin-left: 30px;
+    margin-top: 15px;
+    padding-left: 15px;
+    border-left: 2px solid #e0e0e0;
+}
+
+/* ============================================
+   按鈕樣式
+   ============================================ */
+
+/* 返回按鈕 */
+.back-button {
+    background: #9C27B0;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    font-size: 1rem;
+    display: none;
+}
+
+.back-button:hover {
+    background: #7B1FA2;
+}
+
+.back-button.show {
+    display: inline-block;
+}
+
+/* JSON 檢視切換按鈕 */
+.toggle-json {
+    background: #607D8B;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+    font-size: 1rem;
+}
+
+.toggle-json:hover {
+    background: #455A64;
+}
+
+/* ============================================
+   JSON 檢視器樣式
+   ============================================ */
+
+.json-viewer {
+    background: #263238;
+    color: #aed581;
+    padding: 20px;
+    border-radius: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    max-height: 500px;
+    overflow: auto;
+    margin-top: 20px;
+}
+
+/* ============================================
+   錯誤訊息樣式
+   ============================================ */
+
+.error-message {
+    background: #ffebee;
+    color: #c62828;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 5px solid #f44336;
+    margin: 20px 0;
+}
+
+.error-message i {
+    margin-right: 10px;
+}
+
+/* ============================================
+   隱藏元素
+   ============================================ */
+
+#oauth2read {
+    display: none;
+}
