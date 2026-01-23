@@ -961,6 +961,10 @@ function renderResponseDetail(responseId) {
                 ${answersHtml}
             </div>
         </div>
+        <button class="toggle-response-json" onclick="toggleResponseJson()">
+            <i class="fas fa-code"></i> 顯示/隱藏 JSON 原始資料
+        </button>
+        <div id="response-json-viewer" class="json-viewer" style="display: none;"></div>
         
         <div class="response-section-container">
             <h3><i class="fas fa-chart-line"></i> 相關觀察結果</h3>
@@ -968,6 +972,10 @@ function renderResponseDetail(responseId) {
                 ${observationHtml}
             </div>
         </div>
+        <button class="toggle-observation-json" onclick="toggleObservationJson()">
+            <i class="fas fa-code"></i> 顯示/隱藏 JSON 原始資料
+        </button>
+        <div id="observation-json-viewer" class="json-viewer" style="display: none;"></div>
     `;
     
     // 更新 JSON 查看器
