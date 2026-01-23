@@ -988,7 +988,7 @@ function renderResponseItems(items) {
                 } else if (answer.valueCoding) {
                     answerText = answer.valueCoding.display || answer.valueCoding.code || '未知';
                     // 如果同時有 valueDecimal，添加到顯示中
-                    answerText += answer.extension?.[0]?.valueDecimal !== undefined ? ` (${answer.extension?.[0]?.valueDecimal})` : '';
+                    answerText += answer.valueCoding.extension?.[0]?.valueDecimal !== undefined ? ` (${answer.valueCoding.extension?.[0]?.valueDecimal})` : '';
                 } else if (answer.valueDecimal !== undefined) {
                     answerText = answer.valueDecimal.toString();
                 } else if (answer.valueQuantity) {
