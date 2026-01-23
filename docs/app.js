@@ -22,6 +22,10 @@ let questionnaireData = null;         // 當前選中的問卷資料
 let currentViewMode = 'list';         // 目前檢視模式：'list' 或 'detail'
 let allQuestionnaires = [];           // 所有問卷列表（用於篩選）
 let filteredQuestionnaires = [];      // 篩選後的問卷列表
+let currentFilters = {                // 當前篩選條件
+    status: 'active',                 // 預設篩選為 'active' 狀態
+    search: ''                        // 搜尋關鍵字
+};
 
 // ============================================
 // 全域變數 - Response 相關
