@@ -71,8 +71,8 @@ FHIR.oauth2.ready().then(function(fhirClient) {
  * @param {Object} fhirClient - FHIR 客戶端實例
  */
 function loadQuestionnaireList(fhirClient) {
-    // 向 FHIR 伺服器請求所有 Questionnaire，限制結果數為 100
-    fhirClient.request(FHIR_SERVER_URL + "/Questionnaire?_count=100")
+    // 向 FHIR 伺服器請求所有 Questionnaire
+    fhirClient.request(FHIR_SERVER_URL + "/Questionnaire")
         .then(function(data) {
             console.log("問卷列表已獲取:", data);
             
@@ -400,6 +400,9 @@ function renderQuestionItems(items, level = 0) {
                 // 從不同的選項值類型提取文字
                 if (option.valueCoding) {
                     optionText = option.valueCoding.display || option.valueCoding.code || '';
+                    if( option.valueCoding.extension?.[0]?.valueDecimal !== undefined) {
+                        optionText += ` (${option.valueCoding.extension?.[0]?.valueDecimal})`;
+                    }
                 } else if (option.valueString) {
                     optionText = option.valueString;
                 } else if (option.valueInteger !== undefined) {
@@ -987,8 +990,8 @@ function renderResponseItems(items) {
                 } else if (answer.valueCoding) {
                     answerText = answer.valueCoding.display || answer.valueCoding.code || '未知';
                     // 如果同時有 valueDecimal，添加到顯示中
-                    if (answer.extension?.valueDecimal !== undefined) {
-                        answerText += ` (${answer.extension.valueDecimal})`;
+                    if (answer.extension?.[0]?.valueDecimal !== undefined) {
+                        answerText += ` (${answer.extension?.[0]?.valueDecimal})`;
                     }
                 } else if (answer.valueDecimal !== undefined) {
                     answerText = answer.valueDecimal.toString();
