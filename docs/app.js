@@ -358,7 +358,12 @@ function renderQuestionItems(items, level = 0) {
     return items.map((item, index) => {
         const linkId = item.linkId || `question-${index}`;
         const text = item.text || "無題目文字";
-        const type = item.type || "unknown";
+        let type = item.type || "unknown";
+        
+        // 如果是可重複的 choice 類型，改為複選
+        if (item.repeats && type === 'choice') {
+            type = 'multi-choice';
+        }
         
         // 必填標籤
         const required = item.required 
@@ -548,6 +553,7 @@ function getTypeText(type) {
         'text': '長文字',
         'url': '網址',
         'choice': '單選',
+        'multi-choice': '複選',
         'open-choice': '開放式單選',
         'attachment': '附件',
         'reference': '參考',
