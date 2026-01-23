@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>病人用藥時間表 - SMART on FHIR</title>
+        <title>問卷檢視器 - SMART on FHIR</title>
         <script src="./fhir-client.js"></script>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
         <style>
@@ -30,7 +30,7 @@
             }
 
             .header {
-                background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+                background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
                 color: white;
                 padding: 30px;
                 text-align: center;
@@ -69,98 +69,58 @@
                 100% { transform: rotate(360deg); }
             }
 
-            .patient-info {
+            .questionnaire-info {
                 background: #f8f9fa;
                 border-radius: 15px;
                 padding: 25px;
                 margin-bottom: 30px;
-                border-left: 5px solid #4CAF50;
+                border-left: 5px solid #2196F3;
             }
 
-            .patient-info h2 {
+            .questionnaire-info h2 {
                 color: #333;
                 margin-bottom: 15px;
                 display: flex;
                 align-items: center;
             }
 
-            .patient-info h2 i {
+            .questionnaire-info h2 i {
                 margin-right: 10px;
-                color: #4CAF50;
+                color: #2196F3;
             }
 
-            .patient-details {
+            .info-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
                 gap: 15px;
+                margin-top: 20px;
             }
 
-            .detail-item {
-                display: flex;
-                align-items: center;
-                padding: 10px;
+            .info-item {
+                padding: 15px;
                 background: white;
                 border-radius: 8px;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
 
-            .detail-item i {
-                margin-right: 10px;
-                color: #4CAF50;
-                width: 20px;
-            }
-
-            .medication-section h2 {
-                color: #333;
-                margin-bottom: 25px;
-                display: flex;
-                align-items: center;
-            }
-
-            .medication-section h2 i {
-                margin-right: 10px;
-                color: #2196F3;
-            }
-
-            .medication-list {
-                display: grid;
-                gap: 20px;
-            }
-
-            .medication-card {
-                background: white;
-                border-radius: 15px;
-                padding: 25px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                border-left: 5px solid #2196F3;
-                transition: transform 0.3s ease, box-shadow 0.3s ease;
-            }
-
-            .medication-card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            }
-
-            .medication-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: start;
-                margin-bottom: 15px;
-            }
-
-            .medication-name {
-                font-size: 1.3rem;
+            .info-item .label {
                 font-weight: 600;
-                color: #333;
+                color: #555;
                 margin-bottom: 5px;
+                font-size: 0.9rem;
             }
 
-            .medication-status {
-                padding: 5px 12px;
+            .info-item .value {
+                color: #333;
+                font-size: 1.1rem;
+            }
+
+            .status-badge {
+                display: inline-block;
+                padding: 5px 15px;
                 border-radius: 20px;
-                font-size: 0.8rem;
+                font-size: 0.85rem;
                 font-weight: 600;
-                text-transform: uppercase;
             }
 
             .status-active {
@@ -168,45 +128,96 @@
                 color: #4CAF50;
             }
 
-            .status-completed {
-                background: #e3f2fd;
-                color: #2196F3;
+            .status-draft {
+                background: #fff3e0;
+                color: #ff9800;
             }
 
-            .medication-details {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 15px;
-                margin-top: 15px;
+            .question-section {
+                margin-top: 30px;
             }
 
-            .detail-row {
+            .question-section h2 {
+                color: #333;
+                margin-bottom: 20px;
                 display: flex;
                 align-items: center;
-                padding: 8px 0;
-                border-bottom: 1px solid #f0f0f0;
             }
 
-            .detail-row:last-child {
-                border-bottom: none;
-            }
-
-            .detail-row i {
-                margin-right: 8px;
-                color: #666;
-                width: 16px;
-            }
-
-            .detail-label {
-                font-weight: 500;
-                color: #555;
+            .question-section h2 i {
                 margin-right: 10px;
-                min-width: 80px;
+                color: #9C27B0;
             }
 
-            .detail-value {
+            .question-item {
+                background: white;
+                border-radius: 12px;
+                padding: 20px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border-left: 4px solid #9C27B0;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+
+            .question-item:hover {
+                transform: translateX(5px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+            .question-link-id {
+                font-size: 0.85rem;
+                color: #666;
+                margin-bottom: 8px;
+                font-family: 'Courier New', monospace;
+            }
+
+            .question-text {
+                font-size: 1.1rem;
+                font-weight: 500;
                 color: #333;
-                flex: 1;
+                margin-bottom: 10px;
+            }
+
+            .question-type {
+                display: inline-block;
+                padding: 4px 12px;
+                background: #e3f2fd;
+                color: #1976D2;
+                border-radius: 15px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                margin-top: 5px;
+            }
+
+            .question-required {
+                display: inline-block;
+                padding: 4px 12px;
+                background: #ffebee;
+                color: #c62828;
+                border-radius: 15px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                margin-left: 10px;
+            }
+
+            .answer-options {
+                margin-top: 15px;
+                padding-left: 20px;
+            }
+
+            .answer-option {
+                padding: 8px 12px;
+                margin: 5px 0;
+                background: #f5f5f5;
+                border-radius: 8px;
+                font-size: 0.95rem;
+            }
+
+            .nested-items {
+                margin-left: 30px;
+                margin-top: 15px;
+                padding-left: 15px;
+                border-left: 2px solid #e0e0e0;
             }
 
             .error-message {
@@ -222,33 +233,31 @@
                 margin-right: 10px;
             }
 
-            .no-data {
-                text-align: center;
-                padding: 50px;
-                color: #666;
-            }
-
-            .no-data i {
-                font-size: 3rem;
-                margin-bottom: 15px;
-                color: #ddd;
-            }
-
-            .schedule-time {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 8px 15px;
-                border-radius: 20px;
-                font-weight: 600;
-                display: inline-block;
-                margin: 5px 5px 5px 0;
-            }
-
-            .dosage-info {
-                background: #f8f9fa;
-                padding: 15px;
+            .json-viewer {
+                background: #263238;
+                color: #aed581;
+                padding: 20px;
                 border-radius: 10px;
-                margin-top: 15px;
+                font-family: 'Courier New', monospace;
+                font-size: 0.9rem;
+                max-height: 500px;
+                overflow: auto;
+                margin-top: 20px;
+            }
+
+            .toggle-json {
+                background: #607D8B;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                margin-top: 20px;
+                font-size: 1rem;
+            }
+
+            .toggle-json:hover {
+                background: #455A64;
             }
 
             #oauth2read {
@@ -259,301 +268,256 @@
     <body>
         <div class="container">
             <div class="header">
-                <h1><i class="fas fa-pills"></i> 病人用藥時間表</h1>
-                <p>SMART on FHIR 應用程式 - 智慧醫療資訊系統</p>
+                <h1><i class="fas fa-clipboard-list"></i> 問卷檢視器</h1>
+                <p>SMART on FHIR 應用程式 - FHIR Questionnaire 顯示</p>
             </div>
 
             <div class="content">
                 <!-- OAuth2 Debug Info (Hidden) -->
                 <div id="oauth2read"></div>
                 
-                <!-- Patient Information -->
-                <div class="patient-info">
-                    <h2><i class="fas fa-user-injured"></i> 病人資訊</h2>
-                    <div id="patient-content">
+                <!-- Questionnaire Information -->
+                <div class="questionnaire-info">
+                    <h2><i class="fas fa-info-circle"></i> 問卷資訊</h2>
+                    <div id="questionnaire-info-content">
                         <div class="loading">
                             <i class="fas fa-spinner"></i>
-                            載入病人資料中...
+                            載入問卷資料中...
                         </div>
                     </div>
                 </div>
 
-                <!-- Medications Section -->
-                <div class="medication-section">
-                    <h2><i class="fas fa-prescription-bottle-alt"></i> 用藥清單與時間表</h2>
-                    <div id="medications-content">
+                <!-- Questions Section -->
+                <div class="question-section">
+                    <h2><i class="fas fa-question-circle"></i> 問卷題目</h2>
+                    <div id="questions-content">
                         <div class="loading">
                             <i class="fas fa-spinner"></i>
-                            載入用藥資料中...
+                            載入題目中...
                         </div>
                     </div>
                 </div>
+
+                <!-- JSON Viewer Toggle -->
+                <button class="toggle-json" onclick="toggleJson()">
+                    <i class="fas fa-code"></i> 顯示/隱藏 JSON 原始資料
+                </button>
+                <div id="json-viewer" class="json-viewer" style="display: none;"></div>
             </div>
         </div>
 
         <script type="text/javascript">
+            // Questionnaire ID to fetch
+            const QUESTIONNAIRE_URL = "https://thas.mohw.gov.tw/v/r4/fhir/Questionnaire/2c98768c-26a0-4bf5-903e-4f6151ca31b9";
+            
+            let questionnaireData = null;
+
             FHIR.oauth2.ready().then(function(client) {
-                console.log(client);
+                console.log("SMART on FHIR Client:", client);
                 // Store OAuth2 info (hidden from UI)
                 document.getElementById("oauth2read").innerText = JSON.stringify(client, null, 4);
 
-                // Load patient information
-                client.patient.read().then(
-                    function(patient) {
-                        displayPatientInfo(patient);
-                    },
-                    function(error) {
-                        displayError("patient-content", "載入病人資料時發生錯誤", error);
-                    }
-                );
-                
-                // Load medications
-                client.request("/MedicationRequest?patient=" + client.patient.id, {
-                    resolveReferences: ["medicationReference"],
-                    graph: true
-                })
-                .then(function(data) {
-                    if (!data.entry || !data.entry.length) {
-                        displayNoMedications();
-                        return;
-                    }
-                    displayMedications(data.entry);
-                })
-                .catch(function(error) {
-                    displayError("medications-content", "載入用藥資料時發生錯誤", error);
-                });
+                // Fetch the Questionnaire
+                fetchQuestionnaire(client);
 
             }).catch(function(error) {
                 console.error("SMART on FHIR 初始化失敗:", error);
-                displayError("patient-content", "SMART on FHIR 連線失敗", error);
-                displayError("medications-content", "SMART on FHIR 連線失敗", error);
+                displayError("questionnaire-info-content", "SMART on FHIR 連線失敗", error);
+                displayError("questions-content", "SMART on FHIR 連線失敗", error);
             });
 
-            function displayPatientInfo(patient) {
-                const container = document.getElementById("patient-content");
-                const name = getPatientName(patient);
-                const birthDate = patient.birthDate || "未知";
-                const gender = getGenderText(patient.gender);
-                const id = patient.id || "未知";
+            function fetchQuestionnaire(client) {
+                // Make a direct request to the Questionnaire URL
+                client.request(QUESTIONNAIRE_URL)
+                    .then(function(data) {
+                        console.log("Questionnaire data:", data);
+                        questionnaireData = data;
+                        displayQuestionnaireInfo(data);
+                        displayQuestions(data);
+                        updateJsonViewer(data);
+                    })
+                    .catch(function(error) {
+                        console.error("載入問卷失敗:", error);
+                        displayError("questionnaire-info-content", "載入問卷資料時發生錯誤", error);
+                        displayError("questions-content", "載入問卷資料時發生錯誤", error);
+                    });
+            }
+
+            function displayQuestionnaireInfo(questionnaire) {
+                const container = document.getElementById("questionnaire-info-content");
+                const title = questionnaire.title || questionnaire.name || "未命名問卷";
+                const id = questionnaire.id || "未知";
+                const status = questionnaire.status || "unknown";
+                const version = questionnaire.version || "N/A";
+                const publisher = questionnaire.publisher || "未知";
+                const date = questionnaire.date ? new Date(questionnaire.date).toLocaleDateString('zh-TW') : "未知";
+                const description = questionnaire.description || "無描述";
 
                 container.innerHTML = `
-                    <div class="patient-details">
-                        <div class="detail-item">
-                            <i class="fas fa-user"></i>
-                            <div>
-                                <div class="detail-label">姓名</div>
-                                <div class="detail-value">${name}</div>
-                            </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="label"><i class="fas fa-heading"></i> 標題</div>
+                            <div class="value">${title}</div>
                         </div>
-                        <div class="detail-item">
-                            <i class="fas fa-birthday-cake"></i>
-                            <div>
-                                <div class="detail-label">出生日期</div>
-                                <div class="detail-value">${birthDate}</div>
-                            </div>
+                        <div class="info-item">
+                            <div class="label"><i class="fas fa-id-badge"></i> ID</div>
+                            <div class="value">${id}</div>
                         </div>
-                        <div class="detail-item">
-                            <i class="fas fa-venus-mars"></i>
-                            <div>
-                                <div class="detail-label">性別</div>
-                                <div class="detail-value">${gender}</div>
-                            </div>
+                        <div class="info-item">
+                            <div class="label"><i class="fas fa-flag"></i> 狀態</div>
+                            <div class="value"><span class="status-badge ${getStatusClass(status)}">${getStatusText(status)}</span></div>
                         </div>
-                        <div class="detail-item">
-                            <i class="fas fa-id-card"></i>
-                            <div>
-                                <div class="detail-label">病人ID</div>
-                                <div class="detail-value">${id}</div>
-                            </div>
+                        <div class="info-item">
+                            <div class="label"><i class="fas fa-code-branch"></i> 版本</div>
+                            <div class="value">${version}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label"><i class="fas fa-building"></i> 發佈者</div>
+                            <div class="value">${publisher}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label"><i class="fas fa-calendar"></i> 日期</div>
+                            <div class="value">${date}</div>
                         </div>
                     </div>
+                    ${description !== "無描述" ? `
+                        <div class="info-item" style="margin-top: 15px; grid-column: 1 / -1;">
+                            <div class="label"><i class="fas fa-align-left"></i> 描述</div>
+                            <div class="value">${description}</div>
+                        </div>
+                    ` : ''}
                 `;
             }
 
-            function displayMedications(medications) {
-                const container = document.getElementById("medications-content");
-                const medicationCards = medications.map(entry => {
-                    const medication = entry.resource;
-                    return createMedicationCard(medication);
-                }).join("");
+            function displayQuestions(questionnaire) {
+                const container = document.getElementById("questions-content");
+                
+                if (!questionnaire.item || questionnaire.item.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 30px; color: #666;">
+                            <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                            此問卷沒有題目
+                        </div>
+                    `;
+                    return;
+                }
 
-                container.innerHTML = `<div class="medication-list">${medicationCards}</div>`;
+                const questionsHtml = renderQuestionItems(questionnaire.item);
+                container.innerHTML = questionsHtml;
             }
 
-            function createMedicationCard(medication) {
-                const medicationName = getMedicationName(medication);
-                const status = medication.status || "unknown";
-                const statusClass = getStatusClass(status);
-                const statusText = getStatusText(status);
-                const dosage = getDosageInstructions(medication);
-                const authoredOn = medication.authoredOn ? new Date(medication.authoredOn).toLocaleDateString('zh-TW') : "未知";
-                const intent = medication.intent || "未知";
+            function renderQuestionItems(items, level = 0) {
+                return items.map((item, index) => {
+                    const linkId = item.linkId || `question-${index}`;
+                    const text = item.text || "無題目文字";
+                    const type = item.type || "unknown";
+                    const required = item.required ? '<span class="question-required"><i class="fas fa-asterisk"></i> 必填</span>' : '';
+                    const repeats = item.repeats ? '<span class="question-required" style="background: #fff3e0; color: #f57c00;"><i class="fas fa-repeat"></i> 可重複</span>' : '';
+                    
+                    let answerOptionsHtml = '';
+                    if (item.answerOption && item.answerOption.length > 0) {
+                        const options = item.answerOption.map(option => {
+                            let optionText = '';
+                            if (option.valueCoding) {
+                                optionText = option.valueCoding.display || option.valueCoding.code || '';
+                            } else if (option.valueString) {
+                                optionText = option.valueString;
+                            } else if (option.valueInteger !== undefined) {
+                                optionText = option.valueInteger.toString();
+                            } else if (option.valueDate) {
+                                optionText = option.valueDate;
+                            }
+                            return `<div class="answer-option"><i class="fas fa-check-circle"></i> ${optionText}</div>`;
+                        }).join('');
+                        answerOptionsHtml = `<div class="answer-options"><strong>選項：</strong>${options}</div>`;
+                    }
 
-                return `
-                    <div class="medication-card">
-                        <div class="medication-header">
+                    let nestedHtml = '';
+                    if (item.item && item.item.length > 0) {
+                        nestedHtml = `<div class="nested-items">${renderQuestionItems(item.item, level + 1)}</div>`;
+                    }
+
+                    return `
+                        <div class="question-item">
+                            <div class="question-link-id"><i class="fas fa-link"></i> ${linkId}</div>
+                            <div class="question-text">${text}</div>
                             <div>
-                                <div class="medication-name">${medicationName}</div>
+                                <span class="question-type">${getTypeText(type)}</span>
+                                ${required}
+                                ${repeats}
                             </div>
-                            <div class="medication-status ${statusClass}">${statusText}</div>
+                            ${answerOptionsHtml}
+                            ${nestedHtml}
                         </div>
-                        
-                        <div class="medication-details">
-                            <div class="detail-row">
-                                <i class="fas fa-calendar-alt"></i>
-                                <span class="detail-label">開立日期:</span>
-                                <span class="detail-value">${authoredOn}</span>
-                            </div>
-                            <div class="detail-row">
-                                <i class="fas fa-clipboard-list"></i>
-                                <span class="detail-label">醫囑類型:</span>
-                                <span class="detail-value">${getIntentText(intent)}</span>
-                            </div>
-                        </div>
-
-                        ${dosage ? `<div class="dosage-info">${dosage}</div>` : ''}
-                    </div>
-                `;
+                    `;
+                }).join('');
             }
 
-            function displayNoMedications() {
-                const container = document.getElementById("medications-content");
-                container.innerHTML = `
-                    <div class="no-data">
-                        <i class="fas fa-prescription-bottle"></i>
-                        <h3>目前沒有用藥紀錄</h3>
-                        <p>此病人目前沒有任何用藥處方或藥物治療紀錄。</p>
-                    </div>
-                `;
+            function updateJsonViewer(data) {
+                const jsonViewer = document.getElementById("json-viewer");
+                jsonViewer.textContent = JSON.stringify(data, null, 2);
+            }
+
+            function toggleJson() {
+                const jsonViewer = document.getElementById("json-viewer");
+                if (jsonViewer.style.display === "none") {
+                    jsonViewer.style.display = "block";
+                } else {
+                    jsonViewer.style.display = "none";
+                }
             }
 
             function displayError(containerId, message, error) {
                 const container = document.getElementById(containerId);
+                const errorDetail = error.message || error.stack || JSON.stringify(error);
                 container.innerHTML = `
                     <div class="error-message">
                         <i class="fas fa-exclamation-triangle"></i>
                         <strong>${message}</strong><br>
-                        ${error.message || error.stack || JSON.stringify(error)}
+                        <span style="font-size: 0.9rem;">${errorDetail}</span>
                     </div>
                 `;
             }
 
             // Helper functions
-            function getPatientName(patient) {
-                if (patient.name && patient.name.length > 0) {
-                    const name = patient.name[0];
-                    const family = name.family || "";
-                    const given = (name.given && name.given.join(" ")) || "";
-                    return `${family} ${given}`.trim() || "未知姓名";
-                }
-                return "未知姓名";
-            }
-
-            function getGenderText(gender) {
-                const genderMap = {
-                    'male': '男性',
-                    'female': '女性',
-                    'other': '其他',
-                    'unknown': '未知'
-                };
-                return genderMap[gender] || '未知';
-            }
-
-            function getMedicationName(medication) {
-                // Try to get medication name from various places
-                if (medication.medicationCodeableConcept && medication.medicationCodeableConcept.text) {
-                    return medication.medicationCodeableConcept.text;
-                }
-                if (medication.medicationCodeableConcept && medication.medicationCodeableConcept.coding && medication.medicationCodeableConcept.coding.length > 0) {
-                    return medication.medicationCodeableConcept.coding[0].display || medication.medicationCodeableConcept.coding[0].code;
-                }
-                if (medication.medicationReference && medication.medicationReference.display) {
-                    return medication.medicationReference.display;
-                }
-                return "未知藥物";
-            }
-
             function getStatusClass(status) {
                 const statusMap = {
                     'active': 'status-active',
-                    'completed': 'status-completed',
-                    'stopped': 'status-completed'
+                    'draft': 'status-draft'
                 };
-                return statusMap[status] || 'status-active';
+                return statusMap[status] || 'status-draft';
             }
 
             function getStatusText(status) {
                 const statusMap = {
-                    'active': '使用中',
-                    'completed': '已完成',
-                    'stopped': '已停用',
                     'draft': '草稿',
-                    'cancelled': '已取消'
+                    'active': '使用中',
+                    'retired': '已退役',
+                    'unknown': '未知'
                 };
                 return statusMap[status] || status;
             }
 
-            function getIntentText(intent) {
-                const intentMap = {
-                    'proposal': '建議',
-                    'plan': '計畫',
-                    'order': '醫囑',
-                    'original-order': '原始醫囑',
-                    'reflex-order': '反射性醫囑',
-                    'filler-order': '執行醫囑',
-                    'instance-order': '實例醫囑'
+            function getTypeText(type) {
+                const typeMap = {
+                    'group': '群組',
+                    'display': '顯示',
+                    'boolean': '是非題',
+                    'decimal': '小數',
+                    'integer': '整數',
+                    'date': '日期',
+                    'dateTime': '日期時間',
+                    'time': '時間',
+                    'string': '文字',
+                    'text': '長文字',
+                    'url': '網址',
+                    'choice': '單選',
+                    'open-choice': '開放式單選',
+                    'attachment': '附件',
+                    'reference': '參考',
+                    'quantity': '數量'
                 };
-                return intentMap[intent] || intent;
-            }
-
-            function getDosageInstructions(medication) {
-                if (!medication.dosageInstruction || medication.dosageInstruction.length === 0) {
-                    return null;
-                }
-
-                const dosage = medication.dosageInstruction[0];
-                let dosageHtml = '<h4><i class="fas fa-clock"></i> 用藥說明</h4>';
-
-                if (dosage.text) {
-                    dosageHtml += `<div class="detail-row"><i class="fas fa-info-circle"></i><span class="detail-label">說明:</span><span class="detail-value">${dosage.text}</span></div>`;
-                }
-
-                if (dosage.timing && dosage.timing.repeat) {
-                    const repeat = dosage.timing.repeat;
-                    if (repeat.frequency && repeat.period) {
-                        dosageHtml += `<div class="detail-row"><i class="fas fa-clock"></i><span class="detail-label">頻率:</span><span class="detail-value">每 ${repeat.period} ${getPeriodUnit(repeat.periodUnit)} ${repeat.frequency} 次</span></div>`;
-                    }
-                    if (repeat.timeOfDay && repeat.timeOfDay.length > 0) {
-                        const times = repeat.timeOfDay.map(time => `<span class="schedule-time">${time}</span>`).join('');
-                        dosageHtml += `<div class="detail-row"><i class="fas fa-clock"></i><span class="detail-label">時間:</span><span class="detail-value">${times}</span></div>`;
-                    }
-                }
-
-                if (dosage.doseAndRate && dosage.doseAndRate.length > 0) {
-                    const dose = dosage.doseAndRate[0];
-                    if (dose.doseQuantity) {
-                        dosageHtml += `<div class="detail-row"><i class="fas fa-pills"></i><span class="detail-label">劑量:</span><span class="detail-value">${dose.doseQuantity.value} ${dose.doseQuantity.unit}</span></div>`;
-                    }
-                }
-
-                if (dosage.route && dosage.route.text) {
-                    dosageHtml += `<div class="detail-row"><i class="fas fa-syringe"></i><span class="detail-label">給藥途徑:</span><span class="detail-value">${dosage.route.text}</span></div>`;
-                }
-
-                return dosageHtml;
-            }
-
-            function getPeriodUnit(unit) {
-                const unitMap = {
-                    's': '秒',
-                    'min': '分鐘',
-                    'h': '小時',
-                    'd': '天',
-                    'wk': '週',
-                    'mo': '月',
-                    'a': '年'
-                };
-                return unitMap[unit] || unit;
+                return typeMap[type] || type;
             }
         </script>
     </body>
