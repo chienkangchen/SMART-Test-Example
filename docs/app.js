@@ -20,6 +20,14 @@ const FHIR_SERVER_URL = "https://thas.mohw.gov.tw/v/r4/fhir";
 let client = null;                    // FHIR 客戶端實例
 let questionnaireData = null;         // 當前選中的問卷資料
 let currentViewMode = 'list';         // 目前檢視模式：'list' 或 'detail'
+let allQuestionnaires = [];           // 所有問卷列表（用於篩選）
+let filteredQuestionnaires = [];      // 篩選後的問卷列表
+
+// 篩選狀態
+let currentFilters = {
+    status: null,                     // 目前選中的狀態篩選
+    search: ''                        // 目前的搜尋文字
+};
 
 // ============================================
 // 初始化和主要流程
@@ -77,32 +85,119 @@ function loadQuestionnaireList(fhirClient) {
  * @param {Array} entries - FHIR Bundle 中的 entry 陣列
  */
 function displayQuestionnaireList(entries) {
-    const container = document.getElementById("questionnaire-list-content");
-    
     // 篩選出所有 Questionnaire 類型的資源
-    const questionnaires = entries
+    allQuestionnaires = entries
         .map(entry => entry.resource)
         .filter(q => q.resourceType === "Questionnaire");
 
-    if (questionnaires.length === 0) {
+    // 初始化篩選結果
+    applyFilters();
+}
+
+/**
+ * 應用當前的所有篩選條件
+ */
+function applyFilters() {
+    // 複製所有問卷陣列
+    filteredQuestionnaires = [...allQuestionnaires];
+
+    // 應用狀態篩選
+    if (currentFilters.status) {
+        filteredQuestionnaires = filteredQuestionnaires.filter(q => q.status === currentFilters.status);
+    }
+
+    // 應用搜尋篩選
+    if (currentFilters.search.trim()) {
+        const searchLower = currentFilters.search.toLowerCase();
+        filteredQuestionnaires = filteredQuestionnaires.filter(q => {
+            const title = (q.title || q.name || "").toLowerCase();
+            const id = (q.id || "").toLowerCase();
+            const description = (q.description || "").toLowerCase();
+            return title.includes(searchLower) || id.includes(searchLower) || description.includes(searchLower);
+        });
+    }
+
+    // 顯示篩選結果
+    renderQuestionnaireList();
+    
+    // 更新篩選按鈕的狀態
+    updateFilterButtons();
+}
+
+/**
+ * 渲染問卷列表到 DOM
+ */
+function renderQuestionnaireList() {
+    const container = document.getElementById("questionnaire-list-content");
+
+    if (filteredQuestionnaires.length === 0) {
         displayNoQuestionnaires();
         return;
     }
 
-    // 為每個問卷生成卡片 HTML
-    const listHtml = questionnaires.map(q => `
+    // 為每個問卷生成列表項目 HTML
+    const listHtml = filteredQuestionnaires.map(q => `
         <div class="questionnaire-card" onclick="loadQuestionnaireDetail('${q.id}')">
-            <div class="questionnaire-card-title">${q.title || q.name || "未命名問卷"}</div>
-            <div class="questionnaire-card-id">ID: ${q.id}</div>
-            <div class="questionnaire-card-desc">${q.description || "無描述"}</div>
+            <div class="questionnaire-card-content">
+                <div class="questionnaire-card-title">${q.title || q.name || "未命名問卷"}</div>
+                <div class="questionnaire-card-id">ID: ${q.id}</div>
+                ${q.description ? `<div class="questionnaire-card-desc">${q.description}</div>` : ''}
+            </div>
             <div class="questionnaire-card-meta">
                 <span><i class="fas fa-flag"></i> ${getStatusText(q.status)}</span>
-                <span><i class="fas fa-question"></i> ${(q.item && q.item.length) || 0} 題目</span>
+                <span><i class="fas fa-question"></i> ${(q.item && q.item.length) || 0}</span>
             </div>
         </div>
     `).join('');
 
     container.innerHTML = `<div class="questionnaire-list">${listHtml}</div>`;
+}
+
+/**
+ * 更新篩選按鈕的選中狀態
+ */
+function updateFilterButtons() {
+    document.querySelectorAll('.status-filter-btn').forEach(btn => {
+        const status = btn.getAttribute('data-status');
+        if (status === currentFilters.status) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+/**
+ * 按狀態篩選
+ * @param {string} status - 狀態值 ('draft', 'active' 或 null 清除篩選)
+ */
+function filterByStatus(status) {
+    if (currentFilters.status === status) {
+        // 如果點擊相同按鈕，清除篩選
+        currentFilters.status = null;
+    } else {
+        currentFilters.status = status;
+    }
+    applyFilters();
+}
+
+/**
+ * 根據搜尋文字篩選
+ * @param {string} searchText - 搜尋文字
+ */
+function filterBySearch(searchText) {
+    currentFilters.search = searchText;
+    applyFilters();
+}
+
+/**
+ * 重設所有篩選條件
+ */
+function resetFilters() {
+    currentFilters.status = null;
+    currentFilters.search = '';
+    document.getElementById('search-input').value = '';
+    applyFilters();
 }
 
 /**

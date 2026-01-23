@@ -26,7 +26,43 @@
 
                 <!-- Questionnaire List Section -->
                 <div id="list-section" style="display: none;">
-                    <div style="background: #f8f9fa; border-radius: 15px; padding: 25px; margin-bottom: 30px; border-left: 5px solid #2196F3;">
+                    <!-- 篩選區域 -->
+                    <div class="filter-section">
+                        <h3>
+                            <i class="fas fa-filter"></i> 篩選和搜尋
+                        </h3>
+                        <div class="filter-row">
+                            <!-- 搜尋框 -->
+                            <div class="search-box">
+                                <i class="fas fa-search" style="position: absolute; margin-left: 10px; color: #999;"></i>
+                                <input 
+                                    type="text" 
+                                    id="search-input" 
+                                    placeholder="搜尋問卷標題或 ID..." 
+                                    onkeyup="filterBySearch(this.value)"
+                                    style="padding-left: 35px;"
+                                >
+                            </div>
+                            <!-- 狀態篩選按鈕 -->
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <span style="color: #666; font-size: 0.9rem; font-weight: 500;">狀態：</span>
+                                <div class="status-filter">
+                                    <button class="status-filter-btn" data-status="draft" onclick="filterByStatus('draft')">
+                                        <i class="fas fa-file"></i> 草稿
+                                    </button>
+                                    <button class="status-filter-btn" data-status="active" onclick="filterByStatus('active')">
+                                        <i class="fas fa-check-circle"></i> 使用中
+                                    </button>
+                                    <button class="filter-reset-btn" onclick="resetFilters()">
+                                        <i class="fas fa-redo"></i> 清除篩選
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 問卷列表 -->
+                    <div style="background: #f8f9fa; border-radius: 15px; padding: 25px; border-left: 5px solid #2196F3;">
                         <h2 style="color: #333; margin-bottom: 15px; display: flex; align-items: center;">
                             <i class="fas fa-list" style="margin-right: 10px; color: #2196F3;"></i> 問卷列表
                         </h2>
