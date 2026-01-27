@@ -1477,7 +1477,7 @@ function buildGraph() {
 
     const options = {
         layout: {
-            improvedLayout: true
+            improvedLayout: false
         },
         physics: {
             stabilization: true,
