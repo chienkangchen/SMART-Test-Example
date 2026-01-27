@@ -1387,14 +1387,33 @@ async function fetchResourcesForType(type, patientId) {
 }
 
 function buildSearchCandidates(type, patientId) {
-    const baseQueries = [
-        `patient=${patientId}`,
-        `patient=Patient/${patientId}`,
-        `subject=Patient/${patientId}`,
-        `subject=${patientId}`
-    ];
+    const paramSets = {
+        Encounter: ["patient"],
+        Condition: ["patient", "subject"],
+        Observation: ["patient", "subject"],
+        MedicationRequest: ["patient", "subject"],
+        Procedure: ["patient", "subject"],
+        Immunization: ["patient"],
+        AllergyIntolerance: ["patient"],
+        DiagnosticReport: ["patient", "subject"],
+        CarePlan: ["patient", "subject"],
+        ServiceRequest: ["patient", "subject"],
+        QuestionnaireResponse: ["patient", "subject"],
+        DocumentReference: ["patient", "subject"],
+        ImagingStudy: ["patient"]
+    };
 
-    return baseQueries.map((query) => `${query}&_count=1000`);
+    const params = paramSets[type] || ["patient", "subject"];
+    const queries = [];
+
+    params.forEach((param) => {
+        queries.push(`${param}=${patientId}`);
+        if (param === "patient" || param === "subject") {
+            queries.push(`${param}=Patient/${patientId}`);
+        }
+    });
+
+    return queries.map((query) => `${query}&_count=1000`);
 }
 
 function mergeResources(current, incoming) {
