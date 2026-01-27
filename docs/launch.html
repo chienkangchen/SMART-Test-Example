@@ -21,7 +21,7 @@
               // organization/*.read    - Read organization data
               // questionnaire/*.read    - Read questionnaire data
               // questionnaireResponse/*.read    - Read questionnaireResponse data
-              scope: "launch openid fhirUser patient/*.read,observation/*.read,organization/*.read,questionnaire/*.read,questionnaireResponse/*.write",
+              scope: "launch openid fhirUser patient/*.read encounter/*.read condition/*.read observation/*.read medicationrequest/*.read procedure/*.read immunization/*.read allergyintolerance/*.read diagnosticreport/*.read careplan/*.read servicerequest/*.read questionnaireresponse/*.read documentreference/*.read imagingstudy/*.read",
 
               // Typically, if your redirectUri points to the root of the current directory
               // (where the launchUri is), you can omit this option because the default value is

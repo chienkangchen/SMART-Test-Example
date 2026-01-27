@@ -1,3 +1,4 @@
+if (false) {
 /**
  * FHIR Questionnaire 檢視器 - 主應用程式腳本
  * 
@@ -1179,4 +1180,657 @@ function toggleResponseJson() {
  */
 function toggleObservationJson() {
     toggleViewer("observation-json-viewer");
+}
+}
+
+/*
+ * SMART on FHIR 病人資源關聯圖
+ * - 取得指定病人的相關資源
+ * - 以關聯圖呈現 Patient 與資源間的關係
+ */
+
+const RESOURCE_TYPES = [
+    "Encounter",
+    "Condition",
+    "Observation",
+    "MedicationRequest",
+    "Procedure",
+    "Immunization",
+    "AllergyIntolerance",
+    "DiagnosticReport",
+    "CarePlan",
+    "ServiceRequest",
+    "QuestionnaireResponse",
+    "DocumentReference",
+    "ImagingStudy"
+];
+
+const RESOURCE_LABELS = {
+    Encounter: "就醫紀錄",
+    Condition: "診斷/問題",
+    Observation: "觀察結果",
+    MedicationRequest: "用藥處方",
+    Procedure: "處置/手術",
+    Immunization: "疫苗接種",
+    AllergyIntolerance: "過敏",
+    DiagnosticReport: "診斷報告",
+    CarePlan: "照護計畫",
+    ServiceRequest: "醫令/檢查",
+    QuestionnaireResponse: "問卷回應",
+    DocumentReference: "文件",
+    ImagingStudy: "影像檢查"
+};
+
+const TYPE_COLORS = {
+    Patient: "#1d4ed8",
+    Encounter: "#0ea5e9",
+    Condition: "#ef4444",
+    Observation: "#14b8a6",
+    MedicationRequest: "#f97316",
+    Procedure: "#a855f7",
+    Immunization: "#22c55e",
+    AllergyIntolerance: "#e11d48",
+    DiagnosticReport: "#f59e0b",
+    CarePlan: "#3b82f6",
+    ServiceRequest: "#8b5cf6",
+    QuestionnaireResponse: "#6366f1",
+    DocumentReference: "#64748b",
+    ImagingStudy: "#10b981",
+    Unknown: "#94a3b8"
+};
+
+let client = null;
+let patientResource = null;
+let resourcesByType = {};
+let network = null;
+let nodes = null;
+let edges = null;
+let nodeMeta = new Map();
+let resourceMap = new Map();
+
+const graphContainer = document.getElementById("graph");
+const graphLoading = document.getElementById("graph-loading");
+const patientCard = document.getElementById("patient-card");
+const statsCard = document.getElementById("stats-card");
+const filterList = document.getElementById("filter-list");
+const detailCard = document.getElementById("detail-card");
+const errorBanner = document.getElementById("error-banner");
+
+const reloadBtn = document.getElementById("reload-btn");
+const fitBtn = document.getElementById("fit-btn");
+const stabilizeBtn = document.getElementById("stabilize-btn");
+const nodeSearch = document.getElementById("node-search");
+
+reloadBtn.addEventListener("click", () => initializeApp(true));
+fitBtn.addEventListener("click", () => network && network.fit({ animation: true }));
+stabilizeBtn.addEventListener("click", () => network && network.stabilize());
+nodeSearch.addEventListener("keyup", handleSearch);
+
+FHIR.oauth2.ready()
+    .then((fhirClient) => {
+        client = fhirClient;
+        initializeApp(false);
+    })
+    .catch((error) => {
+        showError("SMART on FHIR 連線失敗", error);
+    });
+
+async function initializeApp(forceReload) {
+    if (!client) {
+        return;
+    }
+
+    if (forceReload) {
+        resetUI();
+    }
+
+    setGraphLoading(true);
+
+    try {
+        const patientId = client.patient && client.patient.id ? client.patient.id : null;
+        if (!patientId) {
+            throw new Error("找不到患者識別資訊，請確認 launch context。");
+        }
+
+        patientResource = await requestAll(`Patient/${patientId}`);
+        renderPatientCard(patientResource);
+
+        resourcesByType = {};
+        const resourcePromises = RESOURCE_TYPES.map(async (type) => {
+            const searchParams = buildSearchParams(type, patientId);
+            const result = await requestAll(`${type}?${searchParams}`);
+            resourcesByType[type] = result;
+        });
+
+        await Promise.all(resourcePromises);
+
+        renderStats();
+        renderFilters();
+        buildGraph();
+    } catch (error) {
+        showError("載入資料時發生錯誤", error);
+    } finally {
+        setGraphLoading(false);
+    }
+}
+
+function resetUI() {
+    errorBanner.style.display = "none";
+    patientCard.innerHTML = "<div class=\"loading\">載入患者資料中...</div>";
+    statsCard.innerHTML = "<div class=\"loading\">統計載入中...</div>";
+    filterList.innerHTML = "";
+    detailCard.innerHTML = `
+        <div class="empty-state">
+            <i class="fas fa-hand-pointer"></i>
+            點選節點查看詳細資訊
+        </div>
+    `;
+}
+
+function setGraphLoading(isLoading) {
+    graphLoading.style.display = isLoading ? "flex" : "none";
+}
+
+function showError(message, error) {
+    errorBanner.style.display = "block";
+    const errorText = error && error.message ? error.message : "未知錯誤";
+    errorBanner.innerHTML = `
+        <strong>${message}</strong>
+        <div>${errorText}</div>
+    `;
+}
+
+async function requestAll(url) {
+    const result = await client.request(url, { pageLimit: 0, flat: true });
+    if (Array.isArray(result)) {
+        return result;
+    }
+    if (result && result.resourceType) {
+        return result;
+    }
+    if (result && result.entry) {
+        return result.entry.map((entry) => entry.resource).filter(Boolean);
+    }
+    return [];
+}
+
+function buildSearchParams(type, patientId) {
+    const byPatientTypes = new Set([
+        "Encounter",
+        "Condition",
+        "Observation",
+        "MedicationRequest",
+        "Procedure",
+        "Immunization",
+        "AllergyIntolerance",
+        "DiagnosticReport",
+        "CarePlan",
+        "ServiceRequest",
+        "QuestionnaireResponse",
+        "DocumentReference",
+        "ImagingStudy"
+    ]);
+
+    if (byPatientTypes.has(type)) {
+        return `patient=${patientId}&_count=1000`;
+    }
+
+    return `subject=Patient/${patientId}&_count=1000`;
+}
+
+function renderPatientCard(patient) {
+    if (!patient || !patient.id) {
+        patientCard.innerHTML = "<div class=\"empty-state\">找不到患者資料</div>";
+        return;
+    }
+
+    const name = formatHumanName(patient.name && patient.name[0]);
+    const gender = patient.gender ? patient.gender : "未知";
+    const birthDate = patient.birthDate ? patient.birthDate : "未知";
+    const identifier = patient.identifier && patient.identifier[0] ? patient.identifier[0].value : "-";
+
+    patientCard.innerHTML = `
+        <div class="patient-name">${name}</div>
+        <div class="patient-meta">
+            <div><span>性別</span>${gender}</div>
+            <div><span>生日</span>${birthDate}</div>
+            <div><span>ID</span>${patient.id}</div>
+            <div><span>識別碼</span>${identifier}</div>
+        </div>
+    `;
+}
+
+function renderStats() {
+    const totalResources = RESOURCE_TYPES.reduce((sum, type) => sum + (resourcesByType[type] || []).length, 0);
+
+    const statsHtml = RESOURCE_TYPES.map((type) => {
+        const count = (resourcesByType[type] || []).length;
+        return `
+            <div class="stat-item" style="border-color: ${TYPE_COLORS[type] || TYPE_COLORS.Unknown};">
+                <div class="stat-count">${count}</div>
+                <div class="stat-label">${RESOURCE_LABELS[type] || type}</div>
+            </div>
+        `;
+    }).join("");
+
+    statsCard.innerHTML = `
+        <div class="stat-item stat-total">
+            <div class="stat-count">${totalResources}</div>
+            <div class="stat-label">總資源數</div>
+        </div>
+        ${statsHtml}
+    `;
+}
+
+function renderFilters() {
+    filterList.innerHTML = RESOURCE_TYPES.map((type) => {
+        const count = (resourcesByType[type] || []).length;
+        return `
+            <label class="filter-item">
+                <input type="checkbox" data-type="${type}" checked />
+                <span class="filter-color" style="background: ${TYPE_COLORS[type] || TYPE_COLORS.Unknown}"></span>
+                <span class="filter-text">${RESOURCE_LABELS[type] || type}</span>
+                <span class="filter-count">${count}</span>
+            </label>
+        `;
+    }).join("");
+
+    filterList.querySelectorAll("input[type=checkbox]").forEach((checkbox) => {
+        checkbox.addEventListener("change", updateVisibility);
+    });
+}
+
+function buildGraph() {
+    nodeMeta = new Map();
+    resourceMap = new Map();
+
+    nodes = new vis.DataSet();
+    edges = new vis.DataSet();
+
+    const patientNodeId = `Patient/${patientResource.id}`;
+    addNode(patientNodeId, patientResource, "Patient", "患者");
+
+    RESOURCE_TYPES.forEach((type) => {
+        const resources = resourcesByType[type] || [];
+        resources.forEach((resource) => {
+            const nodeId = `${resource.resourceType}/${resource.id}`;
+            addNode(nodeId, resource, resource.resourceType, getResourceDisplay(resource));
+            addEdge(patientNodeId, nodeId, "subject");
+            collectAndAddReferences(nodeId, resource);
+        });
+    });
+
+    const options = {
+        layout: {
+            improvedLayout: true
+        },
+        physics: {
+            stabilization: true,
+            barnesHut: {
+                gravitationalConstant: -7000,
+                springLength: 150,
+                springConstant: 0.04
+            }
+        },
+        nodes: {
+            shape: "dot",
+            size: 18,
+            font: {
+                color: "#0f172a",
+                face: "Segoe UI",
+                multi: true
+            },
+            borderWidth: 2
+        },
+        edges: {
+            arrows: {
+                to: { enabled: true, scaleFactor: 0.6 }
+            },
+            color: "#94a3b8",
+            smooth: {
+                type: "dynamic"
+            }
+        },
+        groups: buildGroupStyles()
+    };
+
+    network = new vis.Network(graphContainer, { nodes, edges }, options);
+
+    network.on("selectNode", (params) => {
+        const nodeId = params.nodes && params.nodes[0];
+        if (nodeId) {
+            renderDetail(nodeId);
+        }
+    });
+
+    network.on("deselectNode", () => {
+        detailCard.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-hand-pointer"></i>
+                點選節點查看詳細資訊
+            </div>
+        `;
+    });
+
+    updateVisibility();
+}
+
+function buildGroupStyles() {
+    const groups = {
+        Patient: {
+            color: {
+                background: TYPE_COLORS.Patient,
+                border: "#1e3a8a",
+                highlight: {
+                    background: TYPE_COLORS.Patient,
+                    border: "#1e40af"
+                }
+            }
+        }
+    };
+
+    RESOURCE_TYPES.forEach((type) => {
+        groups[type] = {
+            color: {
+                background: TYPE_COLORS[type] || TYPE_COLORS.Unknown,
+                border: "#ffffff",
+                highlight: {
+                    background: TYPE_COLORS[type] || TYPE_COLORS.Unknown,
+                    border: "#0f172a"
+                }
+            }
+        };
+    });
+
+    groups.Unknown = {
+        color: {
+            background: TYPE_COLORS.Unknown,
+            border: "#ffffff"
+        }
+    };
+
+    return groups;
+}
+
+function addNode(nodeId, resource, group, displayText) {
+    if (nodeMeta.has(nodeId)) {
+        return;
+    }
+
+    const label = `${group}\n${displayText || nodeId}`;
+    nodes.add({
+        id: nodeId,
+        label,
+        group: group || "Unknown"
+    });
+
+    nodeMeta.set(nodeId, { group });
+    if (resource && resource.resourceType) {
+        resourceMap.set(nodeId, resource);
+    }
+}
+
+function addEdge(from, to, label) {
+    const edgeId = `${from}--${label}-->${to}`;
+    if (edges.get(edgeId)) {
+        return;
+    }
+
+    edges.add({
+        id: edgeId,
+        from,
+        to,
+        label,
+        font: { align: "middle", size: 10 }
+    });
+}
+
+function collectAndAddReferences(sourceNodeId, resource) {
+    const references = new Set();
+
+    const walk = (value) => {
+        if (!value) {
+            return;
+        }
+        if (Array.isArray(value)) {
+            value.forEach(walk);
+            return;
+        }
+        if (typeof value === "object") {
+            if (value.reference && typeof value.reference === "string") {
+                references.add(value.reference);
+            }
+            Object.values(value).forEach(walk);
+        }
+    };
+
+    walk(resource);
+
+    references.forEach((ref) => {
+        const normalized = normalizeReference(ref);
+        if (!normalized) {
+            return;
+        }
+        const [type, id] = normalized.split("/");
+        const label = id ? id : normalized;
+        addNode(normalized, null, type || "Unknown", label);
+        addEdge(sourceNodeId, normalized, "ref");
+    });
+}
+
+function normalizeReference(reference) {
+    if (!reference || reference.startsWith("#")) {
+        return null;
+    }
+
+    if (reference.startsWith("urn:uuid:")) {
+        return reference.replace("urn:uuid:", "");
+    }
+
+    if (reference.includes("/")) {
+        const parts = reference.split("/").filter(Boolean);
+        if (reference.startsWith("http")) {
+            const lastTwo = parts.slice(-2);
+            return lastTwo.join("/");
+        }
+        return `${parts[parts.length - 2]}/${parts[parts.length - 1]}`;
+    }
+
+    return reference;
+}
+
+function getResourceDisplay(resource) {
+    if (!resource) {
+        return "";
+    }
+
+    if (resource.resourceType === "Observation" && resource.code) {
+        return resource.code.text || getCodingDisplay(resource.code.coding);
+    }
+
+    if (resource.resourceType === "Condition" && resource.code) {
+        return resource.code.text || getCodingDisplay(resource.code.coding);
+    }
+
+    if (resource.resourceType === "MedicationRequest" && resource.medicationCodeableConcept) {
+        return resource.medicationCodeableConcept.text || getCodingDisplay(resource.medicationCodeableConcept.coding);
+    }
+
+    if (resource.resourceType === "Procedure" && resource.code) {
+        return resource.code.text || getCodingDisplay(resource.code.coding);
+    }
+
+    if (resource.resourceType === "Immunization" && resource.vaccineCode) {
+        return resource.vaccineCode.text || getCodingDisplay(resource.vaccineCode.coding);
+    }
+
+    if (resource.resourceType === "DiagnosticReport" && resource.code) {
+        return resource.code.text || getCodingDisplay(resource.code.coding);
+    }
+
+    if (resource.resourceType === "CarePlan" && resource.title) {
+        return resource.title;
+    }
+
+    if (resource.resourceType === "ServiceRequest" && resource.code) {
+        return resource.code.text || getCodingDisplay(resource.code.coding);
+    }
+
+    if (resource.resourceType === "QuestionnaireResponse" && resource.questionnaire) {
+        return resource.questionnaire;
+    }
+
+    if (resource.resourceType === "DocumentReference" && resource.type) {
+        return resource.type.text || getCodingDisplay(resource.type.coding);
+    }
+
+    if (resource.resourceType === "Encounter" && resource.class) {
+        return resource.class.display || resource.class.code || "Encounter";
+    }
+
+    if (resource.resourceType === "AllergyIntolerance" && resource.code) {
+        return resource.code.text || getCodingDisplay(resource.code.coding);
+    }
+
+    if (resource.resourceType === "ImagingStudy" && resource.description) {
+        return resource.description;
+    }
+
+    return resource.id || resource.resourceType;
+}
+
+function getCodingDisplay(coding) {
+    if (!coding || !coding.length) {
+        return "";
+    }
+    return coding[0].display || coding[0].code || "";
+}
+
+function updateVisibility() {
+    const selectedTypes = new Set();
+    filterList.querySelectorAll("input[type=checkbox]").forEach((checkbox) => {
+        if (checkbox.checked) {
+            selectedTypes.add(checkbox.dataset.type);
+        }
+    });
+
+    nodes.forEach((node) => {
+        if (node.id.startsWith("Patient/")) {
+            nodes.update({ id: node.id, hidden: false });
+            return;
+        }
+        const meta = nodeMeta.get(node.id);
+        const group = meta && meta.group ? meta.group : "Unknown";
+        const shouldShow = selectedTypes.has(group) || group === "Unknown";
+        nodes.update({ id: node.id, hidden: !shouldShow });
+    });
+
+    edges.forEach((edge) => {
+        const fromNode = nodes.get(edge.from);
+        const toNode = nodes.get(edge.to);
+        const hidden = (fromNode && fromNode.hidden) || (toNode && toNode.hidden);
+        edges.update({ id: edge.id, hidden });
+    });
+}
+
+function handleSearch(event) {
+    if (!network || !nodes) {
+        return;
+    }
+    if (event.key === "Enter") {
+        const term = nodeSearch.value.trim().toLowerCase();
+        if (!term) {
+            network.unselectAll();
+            return;
+        }
+        const matches = nodes.get({
+            filter: (item) => item.label && item.label.toLowerCase().includes(term) && !item.hidden
+        });
+        if (matches.length) {
+            network.selectNodes(matches.map((item) => item.id));
+            network.focus(matches[0].id, { scale: 1.2, animation: true });
+        }
+    }
+}
+
+function renderDetail(nodeId) {
+    const resource = resourceMap.get(nodeId);
+
+    if (resource && resource.resourceType === "Patient") {
+        detailCard.innerHTML = `
+            <h3>Patient</h3>
+            <pre>${escapeHtml(JSON.stringify(resource, null, 2))}</pre>
+        `;
+        return;
+    }
+
+    if (!resource) {
+        detailCard.innerHTML = `
+            <h3>${nodeId}</h3>
+            <div class="empty-state">此節點為引用資源，尚未載入詳細資料。</div>
+        `;
+        return;
+    }
+
+    const title = `${resource.resourceType}`;
+    const summary = buildResourceSummary(resource);
+
+    detailCard.innerHTML = `
+        <h3>${title}</h3>
+        <div class="detail-summary">${summary}</div>
+        <pre>${escapeHtml(JSON.stringify(resource, null, 2))}</pre>
+    `;
+}
+
+function buildResourceSummary(resource) {
+    const rows = [];
+    rows.push(`<div><span>ID</span>${resource.id || "-"}</div>`);
+
+    if (resource.status) {
+        rows.push(`<div><span>狀態</span>${resource.status}</div>`);
+    }
+
+    if (resource.code) {
+        rows.push(`<div><span>代碼</span>${resource.code.text || getCodingDisplay(resource.code.coding) || "-"}</div>`);
+    }
+
+    if (resource.effectiveDateTime) {
+        rows.push(`<div><span>日期</span>${resource.effectiveDateTime}</div>`);
+    }
+
+    if (resource.authoredOn) {
+        rows.push(`<div><span>日期</span>${resource.authoredOn}</div>`);
+    }
+
+    if (resource.issued) {
+        rows.push(`<div><span>發布</span>${resource.issued}</div>`);
+    }
+
+    if (resource.subject && resource.subject.reference) {
+        rows.push(`<div><span>Subject</span>${resource.subject.reference}</div>`);
+    }
+
+    return rows.join("");
+}
+
+function formatHumanName(name) {
+    if (!name) {
+        return "未知";
+    }
+    if (name.text) {
+        return name.text;
+    }
+    const given = name.given ? name.given.join(" ") : "";
+    const family = name.family || "";
+    return `${family}${given ? " " + given : ""}`.trim() || "未知";
+}
+
+function escapeHtml(value) {
+    if (!value) {
+        return "";
+    }
+    return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 }
