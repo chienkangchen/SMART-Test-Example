@@ -1303,8 +1303,7 @@ async function initializeApp(forceReload) {
         const failures = [];
         const resourcePromises = RESOURCE_TYPES.map(async (type) => {
             try {
-                const searchParams = buildSearchParams(type, patientId);
-                const result = await requestAll(`${type}?${searchParams}`);
+                const result = await fetchResourcesForType(type, patientId);
                 resourcesByType[type] = result;
             } catch (error) {
                 resourcesByType[type] = [];
@@ -1369,28 +1368,43 @@ async function requestAll(url) {
     return [];
 }
 
-function buildSearchParams(type, patientId) {
-    const byPatientTypes = new Set([
-        "Encounter",
-        "Condition",
-        "Observation",
-        "MedicationRequest",
-        "Procedure",
-        "Immunization",
-        "AllergyIntolerance",
-        "DiagnosticReport",
-        "CarePlan",
-        "ServiceRequest",
-        "QuestionnaireResponse",
-        "DocumentReference",
-        "ImagingStudy"
-    ]);
+async function fetchResourcesForType(type, patientId) {
+    const queries = buildSearchCandidates(type, patientId);
+    let results = [];
 
-    if (byPatientTypes.has(type)) {
-        return `patient=${patientId}&_count=1000`;
+    for (const query of queries) {
+        try {
+            const response = await requestAll(`${type}?${query}`);
+            if (Array.isArray(response) && response.length) {
+                results = mergeResources(results, response);
+            }
+        } catch (error) {
+            continue;
+        }
     }
 
-    return `subject=Patient/${patientId}&_count=1000`;
+    return results;
+}
+
+function buildSearchCandidates(type, patientId) {
+    const baseQueries = [
+        `patient=${patientId}`,
+        `patient=Patient/${patientId}`,
+        `subject=Patient/${patientId}`,
+        `subject=${patientId}`
+    ];
+
+    return baseQueries.map((query) => `${query}&_count=1000`);
+}
+
+function mergeResources(current, incoming) {
+    const map = new Map(current.map((item) => [`${item.resourceType}/${item.id}`, item]));
+    incoming.forEach((item) => {
+        if (item && item.resourceType && item.id) {
+            map.set(`${item.resourceType}/${item.id}`, item);
+        }
+    });
+    return Array.from(map.values());
 }
 
 function renderPatientCard(patient) {
@@ -1464,6 +1478,12 @@ function buildGraph() {
 
     const patientNodeId = `Patient/${patientResource.id}`;
     addNode(patientNodeId, patientResource, "Patient", "患者");
+    nodes.update({
+        id: patientNodeId,
+        shape: "star",
+        size: 28,
+        font: { color: "#ffffff", size: 16 }
+    });
 
     RESOURCE_TYPES.forEach((type) => {
         const resources = resourcesByType[type] || [];
@@ -1514,6 +1534,10 @@ function buildGraph() {
     network.once("afterDrawing", () => {
         network.fit({ animation: true });
     });
+
+    if (nodes.length <= 1) {
+        showError("目前沒有可視的關聯資源", { message: "只載入到 Patient 資料。" });
+    }
 
     network.on("selectNode", (params) => {
         const nodeId = params.nodes && params.nodes[0];
