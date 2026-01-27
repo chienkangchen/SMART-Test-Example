@@ -1287,6 +1287,10 @@ async function initializeApp(forceReload) {
     setGraphLoading(true);
 
     try {
+        if (typeof vis === "undefined") {
+            throw new Error("找不到 vis-network 圖形套件，請確認網路可連線或 CDN 未被阻擋。");
+        }
+
         const patientId = client.patient && client.patient.id ? client.patient.id : null;
         if (!patientId) {
             throw new Error("找不到患者識別資訊，請確認 launch context。");
@@ -1296,13 +1300,24 @@ async function initializeApp(forceReload) {
         renderPatientCard(patientResource);
 
         resourcesByType = {};
+        const failures = [];
         const resourcePromises = RESOURCE_TYPES.map(async (type) => {
-            const searchParams = buildSearchParams(type, patientId);
-            const result = await requestAll(`${type}?${searchParams}`);
-            resourcesByType[type] = result;
+            try {
+                const searchParams = buildSearchParams(type, patientId);
+                const result = await requestAll(`${type}?${searchParams}`);
+                resourcesByType[type] = result;
+            } catch (error) {
+                resourcesByType[type] = [];
+                failures.push({ type, error });
+            }
         });
 
         await Promise.all(resourcePromises);
+
+        if (failures.length) {
+            const list = failures.map((item) => item.type).join(", ");
+            showError("部分資源無法載入，已略過", { message: list });
+        }
 
         renderStats();
         renderFilters();
@@ -1495,6 +1510,10 @@ function buildGraph() {
     };
 
     network = new vis.Network(graphContainer, { nodes, edges }, options);
+
+    network.once("afterDrawing", () => {
+        network.fit({ animation: true });
+    });
 
     network.on("selectNode", (params) => {
         const nodeId = params.nodes && params.nodes[0];
