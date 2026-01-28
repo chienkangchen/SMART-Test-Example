@@ -407,6 +407,11 @@ function buildGraph() {
     network.on("selectNode", (params) => {
         const nodeId = params.nodes && params.nodes[0];
         if (nodeId) {
+            // 先展開節點的 references（如果還未展開）
+            if (!expandedNodes.has(nodeId)) {
+                expandNode(nodeId);
+            }
+            
             // 找出与该节点直接相连的所有节点
             const connectedNodeIds = new Set([nodeId]);
             edges.forEach((edge) => {
@@ -440,11 +445,6 @@ function buildGraph() {
             });
             
             renderDetail(nodeId, connectedNodeIds);
-            
-            // 展開節點的 references
-            if (!expandedNodes.has(nodeId)) {
-                expandNode(nodeId);
-            }
         }
     });
 
@@ -604,7 +604,7 @@ function expandNode(nodeId) {
     console.log("展開節點:", nodeId);
     
     if (expandedNodes.has(nodeId)) {
-        return; // 已經展開過
+        return false; // 已經展開過
     }
     
     expandedNodes.add(nodeId);
@@ -613,29 +613,16 @@ function expandNode(nodeId) {
     const resource = resourceMap.get(nodeId);
     
     if (resource) {
-        // 停止物理模擬，避免現有節點位置亂跑
-        network && network.stopSimulation();
-        
-        // 固定已展開的節點位置
-        expandedNodes.forEach((id) => {
-            const node = nodes.get(id);
-            if (node) {
-                nodes.update({
-                    id: id,
-                    physics: false
-                });
-            }
-        });
-        
         // 收集並添加該資源的所有 references
         collectAndAddReferences(nodeId, resource);
         
         // 重新啟動物理模擬
         if (network) {
-            network.startSimulation();
             network.stabilize({ iterations: 100 });
         }
+        return true;
     }
+    return false;
 }
 
 function collectAndAddReferences(sourceNodeId, resource) {
