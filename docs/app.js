@@ -312,33 +312,46 @@ function renderFilters() {
 }
 
 function buildGraph() {
+    console.log("=== buildGraph 開始 ===");
+    
     if (!graphContainer) {
         console.error("找不到 graph 容器");
         return;
     }
+    console.log("graphContainer 存在");
 
     console.log("開始建立圖形，病人資料:", patientResource);
+    console.log("vis 是否存在:", typeof vis);
+    console.log("vis.DataSet 是否存在:", typeof vis.DataSet);
 
     nodeMeta = new Map();
     resourceMap = new Map();
+    console.log("Map 建立完成");
 
-    console.log("建立 DataSet...");
+    console.log("準備建立 nodes DataSet...");
     nodes = new vis.DataSet();
+    console.log("nodes 建立完成，類型:", typeof nodes);
+    
+    console.log("準備建立 edges DataSet...");
     edges = new vis.DataSet();
-    console.log("DataSet 建立完成");
+    console.log("edges 建立完成，類型:", typeof edges);
 
     const patientNodeId = `Patient/${patientResource.id}`;
-    console.log("準備加入 Patient 節點:", patientNodeId);
-    addNode(patientNodeId, patientResource, "Patient", "患者");
-    console.log("Patient 節點已加入");
+    console.log("patientNodeId:", patientNodeId);
     
+    console.log("準備呼叫 addNode...");
+    addNode(patientNodeId, patientResource, "Patient", "患者");
+    console.log("addNode 完成");
+    
+    console.log("準備更新 Patient 節點樣式...");
     nodes.update({
         id: patientNodeId,
         shape: "star",
         size: 28,
         font: { color: "#ffffff", size: 16 }
     });
-    console.log("Patient 節點已更新樣式");
+    console.log("Patient 節點樣式更新完成");
+
 
     console.log("開始遍歷 RESOURCE_TYPES:", RESOURCE_TYPES);
     RESOURCE_TYPES.forEach((type) => {
@@ -502,16 +515,25 @@ function buildGroupStyles() {
 }
 
 function addNode(nodeId, resource, group, displayText) {
+    console.log("addNode 被呼叫:", { nodeId, group, displayText });
+    
     if (nodeMeta.has(nodeId)) {
+        console.log("節點已存在，跳過:", nodeId);
         return;
     }
 
     const label = `${group}\n${displayText || nodeId}`;
-    nodes.add({
-        id: nodeId,
-        label,
-        group: group || "Unknown"
-    });
+    try {
+        nodes.add({
+            id: nodeId,
+            label,
+            group: group || "Unknown"
+        });
+        console.log("節點已加入:", nodeId);
+    } catch (err) {
+        console.error("nodes.add 失敗:", err);
+        throw err;
+    }
 
     nodeMeta.set(nodeId, { group });
     if (resource && resource.resourceType) {
