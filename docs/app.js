@@ -1240,12 +1240,27 @@ async function renderDetail(nodeId, connectedNodeIds) {
     }
 
     if (!resource) {
+        // 在節點上標記加載狀態
+        if (nodes && nodes.get(nodeId)) {
+            nodes.update({ 
+                id: nodeId, 
+                borderWidth: 3,
+                color: {
+                    border: '#fbbf24',
+                    background: nodes.get(nodeId).color?.background || '#94a3b8'
+                }
+            });
+        }
+        
         // 嘗試從 FHIR 伺服器加載引用資源
         detailCard.innerHTML = `
             <h3>${nodeId}</h3>
-            <div class="empty-state">
-                <i class="fas fa-spinner" style="animation: spin 1s linear infinite;"></i>
-                正在加載引用資源...
+            <div class="loading-container">
+                <div class="spinner-wrapper">
+                    <i class="fas fa-spinner spinner-icon"></i>
+                    <div class="spinner-text">LOADING...</div>
+                </div>
+                <p class="loading-message">正在加載引用資源...</p>
             </div>
         `;
         
@@ -1260,11 +1275,36 @@ async function renderDetail(nodeId, connectedNodeIds) {
                     if (resource && resource.resourceType) {
                         resourceMap.set(nodeId, resource);
                         console.log(`已加載引用資源: ${nodeId}`);
+                        
+                        // 移除節點的加載標記
+                        if (nodes && nodes.get(nodeId)) {
+                            const originalNode = nodes.get(nodeId);
+                            nodes.update({ 
+                                id: nodeId, 
+                                borderWidth: 2,
+                                color: {
+                                    border: '#ffffff',
+                                    background: originalNode.color?.background || '#94a3b8'
+                                }
+                            });
+                        }
                     }
                 }
             }
         } catch (error) {
             console.warn(`加載引用資源失敗 (${nodeId}):`, error.message);
+            // 加載失敗時移除加載標記
+            if (nodes && nodes.get(nodeId)) {
+                const originalNode = nodes.get(nodeId);
+                nodes.update({ 
+                    id: nodeId, 
+                    borderWidth: 2,
+                    color: {
+                        border: '#ef4444',
+                        background: originalNode.color?.background || '#94a3b8'
+                    }
+                });
+            }
         }
         
         // 如果仍無法加載，顯示錯誤訊息
