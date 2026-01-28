@@ -322,18 +322,25 @@ function buildGraph() {
     nodeMeta = new Map();
     resourceMap = new Map();
 
+    console.log("建立 DataSet...");
     nodes = new vis.DataSet();
     edges = new vis.DataSet();
+    console.log("DataSet 建立完成");
 
     const patientNodeId = `Patient/${patientResource.id}`;
+    console.log("準備加入 Patient 節點:", patientNodeId);
     addNode(patientNodeId, patientResource, "Patient", "患者");
+    console.log("Patient 節點已加入");
+    
     nodes.update({
         id: patientNodeId,
         shape: "star",
         size: 28,
         font: { color: "#ffffff", size: 16 }
     });
+    console.log("Patient 節點已更新樣式");
 
+    console.log("開始遍歷 RESOURCE_TYPES:", RESOURCE_TYPES);
     RESOURCE_TYPES.forEach((type) => {
         const resources = resourcesByType[type] || [];
         resources.forEach((resource) => {
@@ -778,6 +785,7 @@ function escapeHtml(value) {
 }
 
 function loadMockScenario() {
+    console.log("=== loadMockScenario 開始 ===");
     resetUI();
     setGraphLoading(true);
 
@@ -861,12 +869,18 @@ function loadMockScenario() {
         ImagingStudy: []
     };
 
+    console.log("Mock 資料準備完成");
     renderPatientCard(patientResource);
+    console.log("Patient 卡片已渲染");
     renderStats();
+    console.log("統計資訊已渲染");
     renderFilters();
+    console.log("篩選器已渲染");
     safeBuildGraph();
+    console.log("safeBuildGraph 已呼叫");
     showError("已載入範例資料", { message: "此為測試用固定資料，確認圖形渲染功能。" });
     setGraphLoading(false);
+    console.log("=== loadMockScenario 結束 ===");
 }
 
 function safeBuildGraph() {
