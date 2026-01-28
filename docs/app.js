@@ -83,21 +83,6 @@ fitBtn.addEventListener("click", () => network && network.fit({ animation: true 
 stabilizeBtn.addEventListener("click", () => network && network.stabilize());
 nodeSearch.addEventListener("keyup", handleSearch);
 
-const showIndirectCheckbox = document.getElementById("show-indirect");
-if (showIndirectCheckbox) {
-    showIndirectCheckbox.addEventListener("change", () => {
-        const showIndirect = showIndirectCheckbox.checked;
-        nodes.forEach((node) => {
-            if (nodeMeta.has(node.id)) {
-                const meta = nodeMeta.get(node.id);
-                const shouldBeHidden = meta.distance > 1 && !showIndirect;
-                nodes.update({ id: node.id, hidden: shouldBeHidden });
-            }
-        });
-        network && network.stabilize();
-    });
-}
-
 if (typeof FHIR !== "undefined" && FHIR.oauth2) {
     FHIR.oauth2.ready()
         .then((fhirClient) => {
@@ -326,6 +311,8 @@ function renderFilters() {
     });
 }
 
+let expandedNodes = new Set();
+
 function buildGraph() {
     console.log("=== buildGraph 開始 ===");
     
@@ -333,49 +320,33 @@ function buildGraph() {
         console.error("找不到 graph 容器");
         return;
     }
-    console.log("graphContainer 存在");
-
-    console.log("開始建立圖形，病人資料:", patientResource);
-    console.log("vis 是否存在:", typeof vis);
-    console.log("vis.DataSet 是否存在:", typeof vis.DataSet);
 
     nodeMeta = new Map();
     resourceMap = new Map();
-    console.log("Map 建立完成");
+    expandedNodes = new Set();
 
-    console.log("準備建立 nodes DataSet...");
     nodes = new vis.DataSet();
-    console.log("nodes 建立完成，類型:", typeof nodes);
-    
-    console.log("準備建立 edges DataSet...");
     edges = new vis.DataSet();
-    console.log("edges 建立完成，類型:", typeof edges);
 
     const patientNodeId = `Patient/${patientResource.id}`;
-    console.log("patientNodeId:", patientNodeId);
     
-    console.log("準備呼叫 addNode...");
+    // 只添加患者和直接關聯的資源
     addNode(patientNodeId, patientResource, "Patient", "患者");
-    console.log("addNode 完成");
-    
-    console.log("準備更新 Patient 節點樣式...");
     nodes.update({
         id: patientNodeId,
         shape: "star",
         size: 28,
         font: { color: "#ffffff", size: 16 }
     });
-    console.log("Patient 節點樣式更新完成");
+    expandedNodes.add(patientNodeId);
 
-
-    console.log("開始遍歷 RESOURCE_TYPES:", RESOURCE_TYPES);
+    // 添加患者的直接關聯資源（第一層）
     RESOURCE_TYPES.forEach((type) => {
         const resources = resourcesByType[type] || [];
         resources.forEach((resource) => {
             const nodeId = `${resource.resourceType}/${resource.id}`;
             addNode(nodeId, resource, resource.resourceType, getResourceDisplay(resource));
             addEdge(patientNodeId, nodeId, "subject");
-            collectAndAddReferences(nodeId, resource);
         });
     });
 
@@ -433,6 +404,11 @@ function buildGraph() {
         const nodeId = params.nodes && params.nodes[0];
         if (nodeId) {
             renderDetail(nodeId);
+            
+            // 展開節點的 references
+            if (!expandedNodes.has(nodeId)) {
+                expandNode(nodeId);
+            }
         }
     });
 
@@ -552,8 +528,7 @@ function addNode(nodeId, resource, group, displayText, distance = 1) {
         nodes.add({
             id: nodeId,
             label,
-            group: group || "Unknown",
-            hidden: distance > 1
+            group: group || "Unknown"
         });
     } catch (err) {
         console.error("nodes.add 失敗:", err);
@@ -579,6 +554,20 @@ function addEdge(from, to, label) {
         label,
         font: { align: "middle", size: 10 }
     });
+}
+
+function expandNode(nodeId) {
+    console.log("展開節點:", nodeId);
+    expandedNodes.add(nodeId);
+    
+    // 從 resourceMap 中查找該節點的資源
+    const resource = resourceMap.get(nodeId);
+    
+    if (resource) {
+        // 收集並添加該資源的所有 references
+        collectAndAddReferences(nodeId, resource);
+        network && network.stabilize();
+    }
 }
 
 function collectAndAddReferences(sourceNodeId, resource) {
