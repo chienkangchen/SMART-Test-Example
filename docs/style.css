@@ -618,6 +618,7 @@ body {
     background: rgba(15, 23, 42, 0.6);
     border-radius: 14px;
     flex-shrink: 0;
+    flex-wrap: wrap;
 }
 
 .search-box {
@@ -628,6 +629,7 @@ body {
     padding: 8px 12px;
     border-radius: 12px;
     flex: 1;
+    min-width: 200px;
 }
 
 .search-box input {
@@ -636,6 +638,65 @@ body {
     color: #e2e8f0;
     width: 100%;
     outline: none;
+}
+
+.date-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #0f172a;
+    padding: 8px 12px;
+    border-radius: 12px;
+    color: #e2e8f0;
+}
+
+.date-filter i {
+    color: #94a3b8;
+}
+
+.date-filter input[type="date"] {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid #334155;
+    color: #e2e8f0;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    outline: none;
+}
+
+.date-filter input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+.date-filter input[type="date"]:hover {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: #3b82f6;
+}
+
+.date-filter input[type="date"]:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.date-filter span {
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.date-filter button {
+    padding: 6px 8px;
+    background: rgba(239, 68, 68, 0.2);
+    border: none;
+    color: #ef4444;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.date-filter button:hover {
+    background: rgba(239, 68, 68, 0.3);
 }
 
 .toolbar-actions {

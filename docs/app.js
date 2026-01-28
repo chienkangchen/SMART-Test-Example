@@ -243,6 +243,11 @@ const mockBtn = document.getElementById("mock-btn");
 const fitBtn = document.getElementById("fit-btn");
 const stabilizeBtn = document.getElementById("stabilize-btn");
 const nodeSearch = document.getElementById("node-search");
+const dateFrom = document.getElementById("date-from");
+const dateTo = document.getElementById("date-to");
+const clearDateBtn = document.getElementById("clear-date-btn");
+
+let dateFilter = { from: null, to: null };
 
 reloadBtn.addEventListener("click", () => initializeApp(true));
 mockBtn.addEventListener("click", () => loadMockScenario());
@@ -257,6 +262,24 @@ stabilizeBtn.addEventListener("click", () => {
     }
 });
 nodeSearch.addEventListener("keyup", handleSearch);
+
+dateFrom.addEventListener("change", () => {
+    dateFilter.from = dateFrom.value ? new Date(dateFrom.value) : null;
+    applyDateFilter();
+});
+
+dateTo.addEventListener("change", () => {
+    dateFilter.to = dateTo.value ? new Date(dateTo.value + "T23:59:59") : null;
+    applyDateFilter();
+});
+
+clearDateBtn.addEventListener("click", () => {
+    dateFrom.value = "";
+    dateTo.value = "";
+    dateFilter.from = null;
+    dateFilter.to = null;
+    applyDateFilter();
+});
 
 if (typeof FHIR !== "undefined" && FHIR.oauth2) {
     FHIR.oauth2.ready()
@@ -682,13 +705,13 @@ function buildGraph() {
                 onlyDynamicEdges: false
             },
             barnesHut: {
-                gravitationalConstant: -7000,
-                springLength: 150,
-                springConstant: 0.04,
-                damping: 0.3,
-                avoidOverlap: 0.2
+                gravitationalConstant: -15000,
+                springLength: 80,
+                springConstant: 0.08,
+                damping: 0.4,
+                avoidOverlap: 0.3
             },
-            maxVelocity: 50,
+            maxVelocity: 40,
             minVelocity: 0.1,
             solver: "barnesHut",
             timestep: 0.5,
@@ -1164,7 +1187,12 @@ function updateVisibility() {
         }
         const meta = nodeMeta.get(node.id);
         const group = meta && meta.group ? meta.group : "Unknown";
-        const shouldShow = selectedTypes.has(group) || group === "Unknown";
+        const typeMatch = selectedTypes.has(group) || group === "Unknown";
+        
+        // 檢查日期過濾
+        const dateMatch = checkDateFilter(node.id);
+        
+        const shouldShow = typeMatch && dateMatch;
         nodes.update({ id: node.id, hidden: !shouldShow });
     });
 
@@ -1174,6 +1202,84 @@ function updateVisibility() {
         const hidden = (fromNode && fromNode.hidden) || (toNode && toNode.hidden);
         edges.update({ id: edge.id, hidden });
     });
+}
+
+function applyDateFilter() {
+    updateVisibility();
+    if (network) {
+        network.fit({ animation: true });
+    }
+}
+
+function checkDateFilter(nodeId) {
+    // 如果沒有設定日期過濾，顯示所有
+    if (!dateFilter.from && !dateFilter.to) {
+        return true;
+    }
+    
+    const resource = resourceMap.get(nodeId);
+    if (!resource) {
+        return true; // 沒有資源數據，預設顯示
+    }
+    
+    // 提取資源的日期
+    const resourceDate = extractResourceDate(resource);
+    if (!resourceDate) {
+        return true; // 沒有日期資訊，預設顯示
+    }
+    
+    // 檢查日期是否在範圍內
+    if (dateFilter.from && resourceDate < dateFilter.from) {
+        return false;
+    }
+    if (dateFilter.to && resourceDate > dateFilter.to) {
+        return false;
+    }
+    
+    return true;
+}
+
+function extractResourceDate(resource) {
+    // 嘗試從各種日期欄位提取日期
+    const dateFields = [
+        'effectiveDateTime',
+        'authoredOn',
+        'issued',
+        'date',
+        'recordedDate',
+        'assertedDate',
+        'onsetDateTime',
+        'abatementDateTime',
+        'performedDateTime',
+        'occurrenceDateTime',
+        'created',
+        'period.start',
+        'effectivePeriod.start'
+    ];
+    
+    for (const field of dateFields) {
+        let value = resource;
+        const parts = field.split('.');
+        
+        for (const part of parts) {
+            if (value && value[part]) {
+                value = value[part];
+            } else {
+                value = null;
+                break;
+            }
+        }
+        
+        if (value && typeof value === 'string') {
+            try {
+                return new Date(value);
+            } catch (e) {
+                continue;
+            }
+        }
+    }
+    
+    return null;
 }
 
 function handleSearch(event) {
