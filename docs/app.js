@@ -378,9 +378,14 @@ function buildGraph() {
         groups: buildGroupStyles()
     };
 
+    console.log(`準備建立網路圖，節點數: ${nodes.length}，邊數: ${edges.length}`);
+    
     network = new vis.Network(graphContainer, { nodes, edges }, options);
+    
+    console.log("vis.Network 已建立", network);
 
     network.once("afterDrawing", () => {
+        console.log("圖形繪製完成");
         network.fit({ animation: true });
     });
 
@@ -865,13 +870,19 @@ function loadMockScenario() {
 }
 
 function safeBuildGraph() {
+    console.log("safeBuildGraph 被呼叫");
+    console.log("vis 是否可用:", typeof vis !== "undefined");
+    console.log("graphContainer:", graphContainer);
+    
     try {
         if (typeof vis === "undefined") {
+            console.error("vis 未定義");
             renderFallbackGraph("未載入 vis-network，改用靜態清單顯示。");
             return;
         }
         buildGraph();
     } catch (error) {
+        console.error("buildGraph 執行錯誤:", error);
         showError("關聯圖渲染失敗", error);
         renderFallbackGraph("關聯圖渲染失敗，改用靜態清單顯示。");
     }
