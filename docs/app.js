@@ -256,11 +256,7 @@ mockBtn.addEventListener("click", () => loadMockScenario());
 fitBtn.addEventListener("click", () => network && network.fit({ animation: true }));
 stabilizeBtn.addEventListener("click", () => {
     if (network) {
-        const nodeCount = nodes.length;
-        const iterations = nodeCount > 100 ? 50 : 300;
-        console.log(`穩定化圖形 (${nodeCount} 個節點, ${iterations} 次迭代)`);
-        network.physics.enabled = true;
-        network.stabilize({ iterations });
+        network.fit({ animation: true });
     }
 });
 nodeSearch.addEventListener("keyup", handleSearch);
@@ -683,29 +679,16 @@ function buildGraph() {
 
     const options = {
         layout: {
-            improvedLayout: false
+            hierarchical: {
+                enabled: true,
+                direction: 'UD',
+                sortMethod: 'directed',
+                nodeSpacing: 150,
+                levelSeparation: 200
+            }
         },
         physics: {
-            enabled: true,
-            stabilization: {
-                enabled: true,
-                iterations: 50,
-                fit: true,
-                updateInterval: 10,
-                onlyDynamicEdges: false
-            },
-            barnesHut: {
-                gravitationalConstant: -25000,
-                springLength: 50,
-                springConstant: 0.15,
-                damping: 0.6,
-                avoidOverlap: 0.4
-            },
-            maxVelocity: 50,
-            minVelocity: 0.75,
-            solver: "barnesHut",
-            timestep: 0.35,
-            adaptiveTimestep: true
+            enabled: false
         },
         nodes: {
             shape: "dot",
@@ -735,12 +718,6 @@ function buildGraph() {
     network = new vis.Network(graphContainer, { nodes, edges }, options);
     
     console.log("vis.Network 已建立", network);
-
-    // 監聽穩定化完成事件，自動停用物理引擎
-    network.on("stabilizationIterationsDone", () => {
-        console.log("圖形已穩定，停用物理引擎");
-        network.setOptions({ physics: false });
-    });
 
     network.once("afterDrawing", () => {
         console.log("圖形繪製完成");
@@ -973,25 +950,9 @@ function expandNode(nodeId) {
         }
     });
     
-    // 根據節點數量決定是否使用物理模擬
-    const nodeCount = nodes.length;
-    if (nodeCount > 100) {
-        // 節點太多時禁用物理模擬，直接使用靜態布局
-        if (network) {
-            network.setOptions({ physics: false });
-            network.redraw();
-        }
-    } else {
-        // 節點較少時臨時啟用物理引擎進行短暫穩定化
-        if (network) {
-            network.setOptions({ physics: true });
-            network.stabilize({ iterations: 15 });
-            
-            // 穩定化完成後再次停用物理引擎
-            setTimeout(() => {
-                network.setOptions({ physics: false });
-            }, 400); // 減少等待時間到400毫秒
-        }
+    // 層級布局自動計算位置，無需物理模擬
+    if (network) {
+        network.redraw();
     }
     return true;
 }
