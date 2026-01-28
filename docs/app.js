@@ -1257,11 +1257,13 @@ const detailCard = document.getElementById("detail-card");
 const errorBanner = document.getElementById("error-banner");
 
 const reloadBtn = document.getElementById("reload-btn");
+const mockBtn = document.getElementById("mock-btn");
 const fitBtn = document.getElementById("fit-btn");
 const stabilizeBtn = document.getElementById("stabilize-btn");
 const nodeSearch = document.getElementById("node-search");
 
 reloadBtn.addEventListener("click", () => initializeApp(true));
+mockBtn.addEventListener("click", () => loadMockScenario());
 fitBtn.addEventListener("click", () => network && network.fit({ animation: true }));
 stabilizeBtn.addEventListener("click", () => network && network.stabilize());
 nodeSearch.addEventListener("keyup", handleSearch);
@@ -1895,4 +1897,96 @@ function escapeHtml(value) {
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
+}
+
+function loadMockScenario() {
+    resetUI();
+    setGraphLoading(true);
+
+    patientResource = {
+        resourceType: "Patient",
+        id: "MOCK-001",
+        name: [{ text: "測試病人" }],
+        gender: "female",
+        birthDate: "1980-01-01",
+        identifier: [{ value: "MOCK-ID" }]
+    };
+
+    resourcesByType = {
+        Encounter: [
+            {
+                resourceType: "Encounter",
+                id: "ENC-001",
+                status: "finished",
+                class: { code: "AMB", display: "門診" },
+                subject: { reference: "Patient/MOCK-001" }
+            }
+        ],
+        Condition: [
+            {
+                resourceType: "Condition",
+                id: "COND-001",
+                code: { text: "高血壓" },
+                subject: { reference: "Patient/MOCK-001" },
+                encounter: { reference: "Encounter/ENC-001" }
+            }
+        ],
+        Observation: [
+            {
+                resourceType: "Observation",
+                id: "OBS-001",
+                status: "final",
+                code: { text: "血壓" },
+                subject: { reference: "Patient/MOCK-001" },
+                encounter: { reference: "Encounter/ENC-001" }
+            },
+            {
+                resourceType: "Observation",
+                id: "OBS-002",
+                status: "final",
+                code: { text: "血糖" },
+                subject: { reference: "Patient/MOCK-001" }
+            }
+        ],
+        MedicationRequest: [
+            {
+                resourceType: "MedicationRequest",
+                id: "MED-001",
+                status: "active",
+                medicationCodeableConcept: { text: "Amlodipine" },
+                subject: { reference: "Patient/MOCK-001" }
+            }
+        ],
+        Procedure: [
+            {
+                resourceType: "Procedure",
+                id: "PROC-001",
+                status: "completed",
+                code: { text: "心電圖" },
+                subject: { reference: "Patient/MOCK-001" }
+            }
+        ],
+        Immunization: [],
+        AllergyIntolerance: [
+            {
+                resourceType: "AllergyIntolerance",
+                id: "ALG-001",
+                code: { text: "青黴素" },
+                patient: { reference: "Patient/MOCK-001" }
+            }
+        ],
+        DiagnosticReport: [],
+        CarePlan: [],
+        ServiceRequest: [],
+        QuestionnaireResponse: [],
+        DocumentReference: [],
+        ImagingStudy: []
+    };
+
+    renderPatientCard(patientResource);
+    renderStats();
+    renderFilters();
+    buildGraph();
+    showError("已載入範例資料", { message: "此為測試用固定資料，確認圖形渲染功能。" });
+    setGraphLoading(false);
 }
