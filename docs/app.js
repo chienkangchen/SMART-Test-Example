@@ -827,7 +827,7 @@ function renderDetail(nodeId, connectedNodeIds) {
                 if (relatedResource) {
                     const display = getResourceDisplay(relatedResource);
                     relatedItems.push(`
-                        <div class="related-item">
+                        <div class="related-item" data-node-id="${id}">
                             <div class="related-type" style="color: ${TYPE_COLORS[relatedResource.resourceType] || TYPE_COLORS.Unknown};">
                                 ${relatedResource.resourceType}
                             </div>
@@ -837,7 +837,7 @@ function renderDetail(nodeId, connectedNodeIds) {
                 } else {
                     // 沒有載入資源詳情，只顯示 reference
                     relatedItems.push(`
-                        <div class="related-item">
+                        <div class="related-item" data-node-id="${id}">
                             <div class="related-type" style="color: ${TYPE_COLORS[resType] || TYPE_COLORS.Unknown};">
                                 ${resType || "Unknown"}
                             </div>
@@ -862,6 +862,17 @@ function renderDetail(nodeId, connectedNodeIds) {
         <h4>JSON 詳情</h4>
         <pre>${escapeHtml(JSON.stringify(resource, null, 2))}</pre>
     `;
+    
+    // 為關聯資源項目添加點擊事件
+    detailCard.querySelectorAll('.related-item').forEach((item) => {
+        item.addEventListener('click', () => {
+            const targetNodeId = item.getAttribute('data-node-id');
+            if (targetNodeId && network) {
+                network.selectNodes([targetNodeId]);
+                network.focus(targetNodeId, { scale: 1.2, animation: true });
+            }
+        });
+    });
 }
 
 function buildResourceSummary(resource) {
