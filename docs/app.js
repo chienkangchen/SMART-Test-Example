@@ -80,7 +80,11 @@ const nodeSearch = document.getElementById("node-search");
 reloadBtn.addEventListener("click", () => initializeApp(true));
 mockBtn.addEventListener("click", () => loadMockScenario());
 fitBtn.addEventListener("click", () => network && network.fit({ animation: true }));
-stabilizeBtn.addEventListener("click", () => network && network.stabilize());
+stabilizeBtn.addEventListener("click", () => {
+    if (network) {
+        network.stabilize({ iterations: 300 });
+    }
+});
 nodeSearch.addEventListener("keyup", handleSearch);
 
 if (typeof FHIR !== "undefined" && FHIR.oauth2) {
@@ -405,6 +409,18 @@ function buildGraph() {
         if (nodeId) {
             renderDetail(nodeId);
             
+            // 隱藏所有邊
+            edges.forEach((edge) => {
+                edges.update({ id: edge.id, hidden: true });
+            });
+            
+            // 只顯示與該節點相關的邊
+            edges.forEach((edge) => {
+                if (edge.from === nodeId || edge.to === nodeId) {
+                    edges.update({ id: edge.id, hidden: false });
+                }
+            });
+            
             // 展開節點的 references
             if (!expandedNodes.has(nodeId)) {
                 expandNode(nodeId);
@@ -413,6 +429,11 @@ function buildGraph() {
     });
 
     network.on("deselectNode", () => {
+        // 顯示所有邊
+        edges.forEach((edge) => {
+            edges.update({ id: edge.id, hidden: false });
+        });
+        
         detailCard.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-hand-pointer"></i>
