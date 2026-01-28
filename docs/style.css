@@ -763,11 +763,17 @@ body {
     background: rgba(30, 41, 59, 0.6);
     border-radius: 10px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, border 0.2s;
+    border: 2px solid transparent;
 }
 
 .related-item:hover {
     background: rgba(30, 41, 59, 1);
+}
+
+.related-item.active {
+    background: rgba(59, 130, 246, 0.3);
+    border-color: #3b82f6;
 }
 
 .related-type {

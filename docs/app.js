@@ -675,9 +675,11 @@ function buildGraph() {
         physics: {
             enabled: true,
             stabilization: {
+                enabled: true,
                 iterations: 100,
                 fit: true,
-                updateInterval: 25
+                updateInterval: 25,
+                onlyDynamicEdges: false
             },
             barnesHut: {
                 gravitationalConstant: -7000,
@@ -720,6 +722,12 @@ function buildGraph() {
     network = new vis.Network(graphContainer, { nodes, edges }, options);
     
     console.log("vis.Network 已建立", network);
+
+    // 監聽穩定化完成事件，自動停用物理引擎
+    network.on("stabilizationIterationsDone", () => {
+        console.log("圖形已穩定，停用物理引擎");
+        network.setOptions({ physics: false });
+    });
 
     network.once("afterDrawing", () => {
         console.log("圖形繪製完成");
@@ -957,14 +965,19 @@ function expandNode(nodeId) {
     if (nodeCount > 100) {
         // 節點太多時禁用物理模擬，直接使用靜態布局
         if (network) {
-            network.physics.enabled = false;
+            network.setOptions({ physics: false });
             network.redraw();
         }
     } else {
-        // 節點較少時啟用輕量級穩定化
+        // 節點較少時臨時啟用物理引擎進行短暫穩定化
         if (network) {
-            network.physics.enabled = true;
-            network.stabilize({ iterations: 50 });
+            network.setOptions({ physics: true });
+            network.stabilize({ iterations: 30 });
+            
+            // 穩定化完成後再次停用物理引擎
+            setTimeout(() => {
+                network.setOptions({ physics: false });
+            }, 1000); // 給予1秒時間完成穩定化
         }
     }
     return true;
@@ -1258,8 +1271,43 @@ function renderDetail(nodeId, connectedNodeIds) {
         item.addEventListener('click', () => {
             const targetNodeId = item.getAttribute('data-node-id');
             if (targetNodeId && network) {
-                network.selectNodes([targetNodeId]);
+                // 移除所有 active 狀態
+                detailCard.querySelectorAll('.related-item').forEach(el => el.classList.remove('active'));
+                // 添加當前項目的 active 狀態
+                item.classList.add('active');
+                
+                // 直接聚焦到節點，但不觸發選中效果
                 network.focus(targetNodeId, { scale: 1.2, animation: true });
+                
+                // 如果節點尚未展開，展開它
+                if (!expandedNodes.has(targetNodeId)) {
+                    expandNode(targetNodeId);
+                }
+                
+                // 手動更新詳情面板（不觸發圖形選中）
+                const connectedNodeIds = new Set([targetNodeId]);
+                edges.forEach((edge) => {
+                    if (edge.from === targetNodeId) connectedNodeIds.add(edge.to);
+                    if (edge.to === targetNodeId) connectedNodeIds.add(edge.from);
+                });
+                
+                // 只更新邊的可見性，不觸發節點選中
+                edges.forEach((edge) => {
+                    const shouldShow = connectedNodeIds.has(edge.from) || connectedNodeIds.has(edge.to);
+                    edges.update({
+                        id: edge.id,
+                        hidden: !shouldShow
+                    });
+                });
+                
+                nodes.forEach((node) => {
+                    nodes.update({
+                        id: node.id,
+                        hidden: !connectedNodeIds.has(node.id)
+                    });
+                });
+                
+                renderDetail(targetNodeId, connectedNodeIds);
             }
         });
     });
