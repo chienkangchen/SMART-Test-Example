@@ -319,10 +319,49 @@ async function initializeApp(forceReload) {
 async function loadResourcesWithEverything(patientId) {
     try {
         console.time("$everything 查詢耗時");
-        const bundle = await requestAll(`Patient/${patientId}/$everything`);
+        
+        // 使用 _count 參數控制每頁數量，允許分頁
+        let allResources = [];
+        let nextUrl = `Patient/${patientId}/$everything?_count=500`;
+        let pageCount = 0;
+
+        // 處理分頁
+        while (nextUrl && pageCount < 10) { // 最多 10 頁，避免無限循環
+            pageCount++;
+            console.log(`$everything 第 ${pageCount} 頁...`);
+            
+            try {
+                // 增加超時時間到 60 秒，用於大量資源
+                const options = { pageLimit: 0, flat: true, timeout: 60000 };
+                const bundle = await client.request(nextUrl, options);
+                
+                if (bundle && bundle.entry && Array.isArray(bundle.entry)) {
+                    allResources = allResources.concat(bundle.entry);
+                    console.log(`第 ${pageCount} 頁載入 ${bundle.entry.length} 項資源`);
+                }
+
+                // 檢查是否有下一頁
+                nextUrl = null;
+                if (bundle && bundle.link) {
+                    const nextLink = bundle.link.find((link) => link.relation === "next");
+                    if (nextLink && nextLink.url) {
+                        nextUrl = nextLink.url;
+                    }
+                }
+            } catch (pageError) {
+                console.error(`第 ${pageCount} 頁查詢失敗:`, pageError.message);
+                // 如果單頁查詢失敗但已有部分結果，繼續使用
+                if (allResources.length > 0) {
+                    console.warn(`已取得 ${allResources.length} 項資源，停止分頁`);
+                    break;
+                }
+                throw pageError;
+            }
+        }
+
         console.timeEnd("$everything 查詢耗時");
         
-        if (!bundle || !bundle.entry) {
+        if (allResources.length === 0) {
             console.warn("$everything 返回空結果");
             return false;
         }
@@ -333,8 +372,8 @@ async function loadResourcesWithEverything(patientId) {
             resourcesByType[type] = [];
         });
 
-        // 解析 Bundle 中的資源
-        bundle.entry.forEach((entry) => {
+        // 解析資源
+        allResources.forEach((entry) => {
             const resource = entry.resource;
             if (resource && resource.resourceType) {
                 const type = resource.resourceType;
@@ -361,13 +400,18 @@ async function loadResourcesIndividually(patientId) {
     const failures = [];
     
     console.time("逐個查詢耗時");
+    
+    // 減少查詢數量：改用 100 而非 1000
     const resourcePromises = RESOURCE_TYPES.map(async (type) => {
         try {
             const result = await fetchResourcesForType(type, patientId);
             resourcesByType[type] = result;
+            if (result.length > 0) {
+                console.log(`${type}: ${result.length} 項`);
+            }
         } catch (error) {
             resourcesByType[type] = [];
-            failures.push({ type, error });
+            failures.push({ type, error: error.message });
         }
     });
 
@@ -375,8 +419,8 @@ async function loadResourcesIndividually(patientId) {
     console.timeEnd("逐個查詢耗時");
 
     if (failures.length) {
-        const list = failures.map((item) => item.type).join(", ");
-        showError("部分資源無法載入，已略過", { message: list });
+        const failureList = failures.map((item) => `${item.type}(${item.error})`).join(", ");
+        showError("部分資源無法載入，已略過", { message: failureList });
     }
 }
 
