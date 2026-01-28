@@ -725,12 +725,10 @@ function buildGraph() {
 
     // 監聽穩定化完成事件，自動停用物理引擎
     network.on("stabilizationIterationsDone", () => {
-        console.log("圖形已穩定，停用物理引擎");
         network.setOptions({ physics: false });
     });
 
     network.once("afterDrawing", () => {
-        console.log("圖形繪製完成");
         network.fit({ animation: true });
     });
 
@@ -756,9 +754,6 @@ function buildGraph() {
                     connectedNodeIds.add(edge.from);
                 }
             });
-            
-            console.log("選中節點:", nodeId);
-            console.log("連接的節點:", Array.from(connectedNodeIds));
             
             // 隐藏所有非关联的节点
             nodes.forEach((node) => {
@@ -1087,58 +1082,6 @@ function getResourceDisplay(resource) {
         return "";
     }
 
-    if (resource.resourceType === "Observation" && resource.code) {
-        return resource.code.text || getCodingDisplay(resource.code.coding);
-    }
-
-    if (resource.resourceType === "Condition" && resource.code) {
-        return resource.code.text || getCodingDisplay(resource.code.coding);
-    }
-
-    if (resource.resourceType === "MedicationRequest" && resource.medicationCodeableConcept) {
-        return resource.medicationCodeableConcept.text || getCodingDisplay(resource.medicationCodeableConcept.coding);
-    }
-
-    if (resource.resourceType === "Procedure" && resource.code) {
-        return resource.code.text || getCodingDisplay(resource.code.coding);
-    }
-
-    if (resource.resourceType === "Immunization" && resource.vaccineCode) {
-        return resource.vaccineCode.text || getCodingDisplay(resource.vaccineCode.coding);
-    }
-
-    if (resource.resourceType === "DiagnosticReport" && resource.code) {
-        return resource.code.text || getCodingDisplay(resource.code.coding);
-    }
-
-    if (resource.resourceType === "CarePlan" && resource.title) {
-        return resource.title;
-    }
-
-    if (resource.resourceType === "ServiceRequest" && resource.code) {
-        return resource.code.text || getCodingDisplay(resource.code.coding);
-    }
-
-    if (resource.resourceType === "QuestionnaireResponse" && resource.questionnaire) {
-        return resource.questionnaire;
-    }
-
-    if (resource.resourceType === "DocumentReference" && resource.type) {
-        return resource.type.text || getCodingDisplay(resource.type.coding);
-    }
-
-    if (resource.resourceType === "Encounter" && resource.class) {
-        return resource.class.display || resource.class.code || "Encounter";
-    }
-
-    if (resource.resourceType === "AllergyIntolerance" && resource.code) {
-        return resource.code.text || getCodingDisplay(resource.code.coding);
-    }
-
-    if (resource.resourceType === "ImagingStudy" && resource.description) {
-        return resource.description;
-    }
-
     return resource.id || resource.resourceType;
 }
 
@@ -1443,10 +1386,6 @@ function escapeHtml(value) {
 }
 
 function safeBuildGraph() {
-    console.log("safeBuildGraph 被呼叫");
-    console.log("vis 是否可用:", typeof vis !== "undefined");
-    console.log("graphContainer:", graphContainer);
-    
     try {
         if (typeof vis === "undefined") {
             console.error("vis 未定義");
