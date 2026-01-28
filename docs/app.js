@@ -5,52 +5,219 @@
  */
 
 const RESOURCE_TYPES = [
-    "Encounter",
-    "Condition",
-    "Observation",
-    "MedicationRequest",
-    "Procedure",
-    "Immunization",
+    // Clinical (临床)
     "AllergyIntolerance",
-    "DiagnosticReport",
     "CarePlan",
+    "CareTeam",
+    "ClinicalImpression",
+    "Condition",
+    "DetectedIssue",
+    "FamilyMemberHistory",
+    "Goal",
+    "Procedure",
+    "RiskAssessment",
+    
+    // Diagnostics (诊断)
+    "BodyStructure",
+    "DiagnosticReport",
+    "ImagingStudy",
+    "Media",
+    "Observation",
+    "Specimen",
+    
+    // Medications (药物)
+    "Immunization",
+    "MedicationAdministration",
+    "MedicationDispense",
+    "MedicationRequest",
+    "MedicationStatement",
+    
+    // Workflow (工作流)
+    "Appointment",
+    "AppointmentResponse",
+    "DeviceRequest",
+    "NutritionOrder",
     "ServiceRequest",
-    "QuestionnaireResponse",
+    "Task",
+    "VisionPrescription",
+    
+    // Financial (财务)
+    "Account",
+    "ChargeItem",
+    "Claim",
+    "ClaimResponse",
+    "Coverage",
+    "CoverageEligibilityRequest",
+    "CoverageEligibilityResponse",
+    "EnrollmentRequest",
+    "EnrollmentResponse",
+    "ExplanationOfBenefit",
+    "Invoice",
+    "PaymentNotice",
+    "PaymentReconciliation",
+    
+    // Administrative (行政)
+    "Encounter",
+    "EpisodeOfCare",
+    "Flag",
+    
+    // Documents (文档)
+    "Composition",
+    "DocumentManifest",
     "DocumentReference",
-    "ImagingStudy"
+    "QuestionnaireResponse",
+    
+    // Others (其他)
+    "Communication",
+    "CommunicationRequest",
+    "DeviceUseStatement",
+    "SupplyDelivery",
+    "SupplyRequest"
 ];
 
 const RESOURCE_LABELS = {
-    Encounter: "就醫紀錄",
-    Condition: "診斷/問題",
-    Observation: "觀察結果",
-    MedicationRequest: "用藥處方",
-    Procedure: "處置/手術",
-    Immunization: "疫苗接種",
+    // Clinical
     AllergyIntolerance: "過敏",
-    DiagnosticReport: "診斷報告",
     CarePlan: "照護計畫",
+    CareTeam: "照護團隊",
+    ClinicalImpression: "臨床印象",
+    Condition: "診斷/問題",
+    DetectedIssue: "檢測問題",
+    FamilyMemberHistory: "家族史",
+    Goal: "照護目標",
+    Procedure: "處置/手術",
+    RiskAssessment: "風險評估",
+    
+    // Diagnostics
+    BodyStructure: "身體結構",
+    DiagnosticReport: "診斷報告",
+    ImagingStudy: "影像檢查",
+    Media: "媒體",
+    Observation: "觀察結果",
+    Specimen: "檢體",
+    
+    // Medications
+    Immunization: "疫苗接種",
+    MedicationAdministration: "給藥記錄",
+    MedicationDispense: "配藥記錄",
+    MedicationRequest: "用藥處方",
+    MedicationStatement: "用藥聲明",
+    
+    // Workflow
+    Appointment: "預約",
+    AppointmentResponse: "預約回應",
+    DeviceRequest: "設備申請",
+    NutritionOrder: "營養醫囑",
     ServiceRequest: "醫令/檢查",
-    QuestionnaireResponse: "問卷回應",
+    Task: "任務",
+    VisionPrescription: "視力處方",
+    
+    // Financial
+    Account: "帳戶",
+    ChargeItem: "收費項目",
+    Claim: "醫療申報",
+    ClaimResponse: "申報回應",
+    Coverage: "保險範圍",
+    CoverageEligibilityRequest: "資格查詢",
+    CoverageEligibilityResponse: "資格回應",
+    EnrollmentRequest: "投保申請",
+    EnrollmentResponse: "投保回應",
+    ExplanationOfBenefit: "給付說明",
+    Invoice: "帳單",
+    PaymentNotice: "付款通知",
+    PaymentReconciliation: "付款對帳",
+    
+    // Administrative
+    Encounter: "就醫紀錄",
+    EpisodeOfCare: "照護事件",
+    Flag: "標記",
+    
+    // Documents
+    Composition: "文件組成",
+    DocumentManifest: "文件清單",
     DocumentReference: "文件",
-    ImagingStudy: "影像檢查"
+    QuestionnaireResponse: "問卷回應",
+    
+    // Others
+    Communication: "溝通記錄",
+    CommunicationRequest: "溝通請求",
+    DeviceUseStatement: "設備使用",
+    SupplyDelivery: "物資交付",
+    SupplyRequest: "物資申請"
 };
 
 const TYPE_COLORS = {
     Patient: "#1d4ed8",
-    Encounter: "#0ea5e9",
-    Condition: "#ef4444",
-    Observation: "#14b8a6",
-    MedicationRequest: "#f97316",
-    Procedure: "#a855f7",
-    Immunization: "#22c55e",
+    
+    // Clinical
     AllergyIntolerance: "#e11d48",
-    DiagnosticReport: "#f59e0b",
     CarePlan: "#3b82f6",
-    ServiceRequest: "#8b5cf6",
-    QuestionnaireResponse: "#6366f1",
-    DocumentReference: "#64748b",
+    CareTeam: "#0ea5e9",
+    ClinicalImpression: "#8b5cf6",
+    Condition: "#ef4444",
+    DetectedIssue: "#dc2626",
+    FamilyMemberHistory: "#f472b6",
+    Goal: "#06b6d4",
+    Procedure: "#a855f7",
+    RiskAssessment: "#c026d3",
+    
+    // Diagnostics
+    BodyStructure: "#84cc16",
+    DiagnosticReport: "#f59e0b",
     ImagingStudy: "#10b981",
+    Media: "#14b8a6",
+    Observation: "#14b8a6",
+    Specimen: "#059669",
+    
+    // Medications
+    Immunization: "#22c55e",
+    MedicationAdministration: "#fb923c",
+    MedicationDispense: "#fdba74",
+    MedicationRequest: "#f97316",
+    MedicationStatement: "#ea580c",
+    
+    // Workflow
+    Appointment: "#2563eb",
+    AppointmentResponse: "#3b82f6",
+    DeviceRequest: "#7c3aed",
+    NutritionOrder: "#65a30d",
+    ServiceRequest: "#8b5cf6",
+    Task: "#6366f1",
+    VisionPrescription: "#4f46e5",
+    
+    // Financial
+    Account: "#0891b2",
+    ChargeItem: "#0e7490",
+    Claim: "#ec4899",
+    ClaimResponse: "#db2777",
+    Coverage: "#06b6d4",
+    CoverageEligibilityRequest: "#0284c7",
+    CoverageEligibilityResponse: "#0369a1",
+    EnrollmentRequest: "#7dd3fc",
+    EnrollmentResponse: "#38bdf8",
+    ExplanationOfBenefit: "#f472b6",
+    Invoice: "#fbbf24",
+    PaymentNotice: "#fcd34d",
+    PaymentReconciliation: "#fde047",
+    
+    // Administrative
+    Encounter: "#0ea5e9",
+    EpisodeOfCare: "#0284c7",
+    Flag: "#f59e0b",
+    
+    // Documents
+    Composition: "#64748b",
+    DocumentManifest: "#475569",
+    DocumentReference: "#64748b",
+    QuestionnaireResponse: "#6366f1",
+    
+    // Others
+    Communication: "#a78bfa",
+    CommunicationRequest: "#8b5cf6",
+    DeviceUseStatement: "#818cf8",
+    SupplyDelivery: "#4ade80",
+    SupplyRequest: "#22c55e",
+    
     Unknown: "#94a3b8"
 };
 
@@ -227,7 +394,10 @@ function buildSearchCandidates(type, patientId) {
         ServiceRequest: ["patient", "subject"],
         QuestionnaireResponse: ["patient", "subject"],
         DocumentReference: ["patient", "subject"],
-        ImagingStudy: ["patient"]
+        ImagingStudy: ["patient"],
+        Claim: ["patient"],
+        ExplanationOfBenefit: ["patient"],
+        Coverage: ["patient", "beneficiary"]
     };
 
     const params = paramSets[type] || ["patient", "subject"];
@@ -235,7 +405,7 @@ function buildSearchCandidates(type, patientId) {
 
     params.forEach((param) => {
         queries.push(`${param}=${patientId}`);
-        if (param === "patient" || param === "subject") {
+        if (param === "patient" || param === "subject" || param === "beneficiary") {
             queries.push(`${param}=Patient/${patientId}`);
         }
     });
