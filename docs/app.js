@@ -407,9 +407,24 @@ function buildGraph() {
     network.on("selectNode", (params) => {
         const nodeId = params.nodes && params.nodes[0];
         if (nodeId) {
-            renderDetail(nodeId);
+            // 找出与该节点直接相连的所有节点
+            const connectedNodeIds = new Set([nodeId]);
+            edges.forEach((edge) => {
+                if (edge.from === nodeId) {
+                    connectedNodeIds.add(edge.to);
+                }
+                if (edge.to === nodeId) {
+                    connectedNodeIds.add(edge.from);
+                }
+            });
             
-            // 隱藏所有邊
+            // 隐藏所有非关联的节点
+            nodes.forEach((node) => {
+                const hidden = !connectedNodeIds.has(node.id);
+                nodes.update({ id: node.id, hidden });
+            });
+            
+            // 隐藏所有邊
             edges.forEach((edge) => {
                 edges.update({ id: edge.id, hidden: true });
             });
@@ -421,6 +436,8 @@ function buildGraph() {
                 }
             });
             
+            renderDetail(nodeId, connectedNodeIds);
+            
             // 展開節點的 references
             if (!expandedNodes.has(nodeId)) {
                 expandNode(nodeId);
@@ -429,7 +446,10 @@ function buildGraph() {
     });
 
     network.on("deselectNode", () => {
-        // 顯示所有邊
+        // 顯示所有節點和邊
+        nodes.forEach((node) => {
+            nodes.update({ id: node.id, hidden: false });
+        });
         edges.forEach((edge) => {
             edges.update({ id: edge.id, hidden: false });
         });
@@ -783,7 +803,7 @@ function handleSearch(event) {
     }
 }
 
-function renderDetail(nodeId) {
+function renderDetail(nodeId, connectedNodeIds) {
     const resource = resourceMap.get(nodeId);
 
     if (resource && resource.resourceType === "Patient") {
@@ -804,10 +824,47 @@ function renderDetail(nodeId) {
 
     const title = `${resource.resourceType}`;
     const summary = buildResourceSummary(resource);
+    
+    // 構建關聯資源列表
+    let relatedHtml = "";
+    if (connectedNodeIds && connectedNodeIds.size > 1) {
+        const relatedItems = [];
+        connectedNodeIds.forEach((id) => {
+            if (id !== nodeId) {
+                const relatedResource = resourceMap.get(id);
+                if (relatedResource) {
+                    const display = getResourceDisplay(relatedResource);
+                    relatedItems.push(`
+                        <div class="related-item">
+                            <div class="related-type" style="color: ${TYPE_COLORS[relatedResource.resourceType] || TYPE_COLORS.Unknown};">
+                                ${relatedResource.resourceType}
+                            </div>
+                            <div class="related-text">${display || relatedResource.id}</div>
+                        </div>
+                    `);
+                } else {
+                    relatedItems.push(`
+                        <div class="related-item">
+                            <div class="related-type">${id.split("/")[0]}</div>
+                            <div class="related-text">${id.split("/")[1]}</div>
+                        </div>
+                    `);
+                }
+            }
+        });
+        relatedHtml = `
+            <div class="related-section">
+                <h4><i class="fas fa-link"></i> 關聯資源 (${relatedItems.length})</h4>
+                <div class="related-list">${relatedItems.join("")}</div>
+            </div>
+        `;
+    }
 
     detailCard.innerHTML = `
         <h3>${title}</h3>
         <div class="detail-summary">${summary}</div>
+        ${relatedHtml}
+        <h4>JSON 詳情</h4>
         <pre>${escapeHtml(JSON.stringify(resource, null, 2))}</pre>
     `;
 }
