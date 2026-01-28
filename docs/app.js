@@ -1163,6 +1163,11 @@ function getCodingDisplay(coding) {
 }
 
 function updateVisibility() {
+    // 安全检查：确保必要的 DOM 和数据结构存在
+    if (!filterList || !nodes || !edges) {
+        return;
+    }
+    
     const selectedTypes = new Set();
     filterList.querySelectorAll("input[type=checkbox]").forEach((checkbox) => {
         if (checkbox.checked) {
