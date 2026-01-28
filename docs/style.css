@@ -514,6 +514,43 @@ body {
     gap: 8px;
 }
 
+.collapsible-header {
+    cursor: pointer;
+    user-select: none;
+    justify-content: space-between !important;
+    transition: all 0.3s ease;
+}
+
+.collapsible-header:hover {
+    color: #1d4ed8;
+}
+
+.collapse-icon {
+    transition: transform 0.3s ease;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.collapsible-header:hover .collapse-icon {
+    color: #1d4ed8;
+}
+
+.collapse-icon.collapsed {
+    transform: rotate(180deg);
+}
+
+.collapsible-content {
+    max-height: 500px;
+    overflow-y: auto;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
 .panel-center .panel-section h2 {
     color: #e2e8f0;
 }

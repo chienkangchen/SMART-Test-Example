@@ -265,6 +265,18 @@ stabilizeBtn.addEventListener("click", () => {
 });
 nodeSearch.addEventListener("keyup", handleSearch);
 
+// 資源篩選收合功能
+const filterCollapseHeader = document.querySelector(".collapsible-header");
+const filterCollapseIcon = document.getElementById("filter-collapse-icon");
+const filterListContent = document.getElementById("filter-list");
+
+if (filterCollapseHeader && filterCollapseIcon && filterListContent) {
+    filterCollapseHeader.addEventListener("click", () => {
+        filterListContent.classList.toggle("collapsed");
+        filterCollapseIcon.classList.toggle("collapsed");
+    });
+}
+
 if (typeof FHIR !== "undefined" && FHIR.oauth2) {
     FHIR.oauth2.ready()
         .then((fhirClient) => {
