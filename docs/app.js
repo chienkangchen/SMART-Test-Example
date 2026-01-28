@@ -249,7 +249,11 @@ mockBtn.addEventListener("click", () => loadMockScenario());
 fitBtn.addEventListener("click", () => network && network.fit({ animation: true }));
 stabilizeBtn.addEventListener("click", () => {
     if (network) {
-        network.stabilize({ iterations: 300 });
+        const nodeCount = nodes.length;
+        const iterations = nodeCount > 100 ? 50 : 300;
+        console.log(`穩定化圖形 (${nodeCount} 個節點, ${iterations} 次迭代)`);
+        network.physics.enabled = true;
+        network.stabilize({ iterations });
     }
 });
 nodeSearch.addEventListener("keyup", handleSearch);
@@ -293,23 +297,13 @@ async function initializeApp(forceReload) {
         patientResource = await requestAll(`Patient/${patientId}`);
         renderPatientCard(patientResource);
 
-        resourcesByType = {};
-        const failures = [];
-        const resourcePromises = RESOURCE_TYPES.map(async (type) => {
-            try {
-                const result = await fetchResourcesForType(type, patientId);
-                resourcesByType[type] = result;
-            } catch (error) {
-                resourcesByType[type] = [];
-                failures.push({ type, error });
-            }
-        });
-
-        await Promise.all(resourcePromises);
-
-        if (failures.length) {
-            const list = failures.map((item) => item.type).join(", ");
-            showError("部分資源無法載入，已略過", { message: list });
+        // 優先使用 $everything 方式
+        console.log("嘗試使用 $everything 載入所有資源...");
+        const success = await loadResourcesWithEverything(patientId);
+        
+        if (!success) {
+            console.log("$everything 失敗，降級為逐個查詢...");
+            await loadResourcesIndividually(patientId);
         }
 
         renderStats();
@@ -319,6 +313,70 @@ async function initializeApp(forceReload) {
         showError("載入資料時發生錯誤", error);
     } finally {
         setGraphLoading(false);
+    }
+}
+
+async function loadResourcesWithEverything(patientId) {
+    try {
+        console.time("$everything 查詢耗時");
+        const bundle = await requestAll(`Patient/${patientId}/$everything`);
+        console.timeEnd("$everything 查詢耗時");
+        
+        if (!bundle || !bundle.entry) {
+            console.warn("$everything 返回空結果");
+            return false;
+        }
+
+        // 初始化所有資源類型
+        resourcesByType = {};
+        RESOURCE_TYPES.forEach((type) => {
+            resourcesByType[type] = [];
+        });
+
+        // 解析 Bundle 中的資源
+        bundle.entry.forEach((entry) => {
+            const resource = entry.resource;
+            if (resource && resource.resourceType) {
+                const type = resource.resourceType;
+                if (RESOURCE_TYPES.includes(type)) {
+                    resourcesByType[type].push(resource);
+                } else if (!resourcesByType[type]) {
+                    resourcesByType[type] = [resource];
+                } else {
+                    resourcesByType[type].push(resource);
+                }
+            }
+        });
+
+        console.log("$everything 成功載入資源", Object.entries(resourcesByType).map(([type, items]) => `${type}: ${items.length}`));
+        return true;
+    } catch (error) {
+        console.error("$everything 查詢失敗:", error.message);
+        return false;
+    }
+}
+
+async function loadResourcesIndividually(patientId) {
+    resourcesByType = {};
+    const failures = [];
+    
+    console.time("逐個查詢耗時");
+    const resourcePromises = RESOURCE_TYPES.map(async (type) => {
+        try {
+            const result = await fetchResourcesForType(type, patientId);
+            resourcesByType[type] = result;
+        } catch (error) {
+            resourcesByType[type] = [];
+            failures.push({ type, error });
+        }
+    });
+
+    await Promise.all(resourcePromises);
+    console.timeEnd("逐個查詢耗時");
+
+    if (failures.length) {
+        const list = failures.map((item) => item.type).join(", ");
+        showError("部分資源無法載入，已略過", { message: list });
     }
 }
 
@@ -529,12 +587,24 @@ function buildGraph() {
             improvedLayout: false
         },
         physics: {
-            stabilization: true,
+            enabled: true,
+            stabilization: {
+                iterations: 100,
+                fit: true,
+                updateInterval: 25
+            },
             barnesHut: {
                 gravitationalConstant: -7000,
                 springLength: 150,
-                springConstant: 0.04
-            }
+                springConstant: 0.04,
+                damping: 0.3,
+                avoidOverlap: 0.2
+            },
+            maxVelocity: 50,
+            minVelocity: 0.1,
+            solver: "barnesHut",
+            timestep: 0.5,
+            adaptiveTimestep: true
         },
         nodes: {
             shape: "dot",
@@ -796,9 +866,20 @@ function expandNode(nodeId) {
         }
     });
     
-    // 重新啟動物理模擬
-    if (network) {
-        network.stabilize({ iterations: 100 });
+    // 根據節點數量決定是否使用物理模擬
+    const nodeCount = nodes.length;
+    if (nodeCount > 100) {
+        // 節點太多時禁用物理模擬，直接使用靜態布局
+        if (network) {
+            network.physics.enabled = false;
+            network.redraw();
+        }
+    } else {
+        // 節點較少時啟用輕量級穩定化
+        if (network) {
+            network.physics.enabled = true;
+            network.stabilize({ iterations: 50 });
+        }
     }
     return true;
 }
