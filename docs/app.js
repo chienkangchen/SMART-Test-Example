@@ -418,6 +418,9 @@ function buildGraph() {
                 }
             });
             
+            console.log("選中節點:", nodeId);
+            console.log("連接的節點:", Array.from(connectedNodeIds));
+            
             // 隐藏所有非关联的节点
             nodes.forEach((node) => {
                 const hidden = !connectedNodeIds.has(node.id);
@@ -832,6 +835,8 @@ function renderDetail(nodeId, connectedNodeIds) {
         connectedNodeIds.forEach((id) => {
             if (id !== nodeId) {
                 const relatedResource = resourceMap.get(id);
+                const [resType, resId] = id.split("/");
+                
                 if (relatedResource) {
                     const display = getResourceDisplay(relatedResource);
                     relatedItems.push(`
@@ -843,10 +848,13 @@ function renderDetail(nodeId, connectedNodeIds) {
                         </div>
                     `);
                 } else {
+                    // 沒有載入資源詳情，只顯示 reference
                     relatedItems.push(`
                         <div class="related-item">
-                            <div class="related-type">${id.split("/")[0]}</div>
-                            <div class="related-text">${id.split("/")[1]}</div>
+                            <div class="related-type" style="color: ${TYPE_COLORS[resType] || TYPE_COLORS.Unknown};">
+                                ${resType || "Unknown"}
+                            </div>
+                            <div class="related-text">${resId || id}</div>
                         </div>
                     `);
                 }
