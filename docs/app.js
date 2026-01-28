@@ -83,14 +83,20 @@ fitBtn.addEventListener("click", () => network && network.fit({ animation: true 
 stabilizeBtn.addEventListener("click", () => network && network.stabilize());
 nodeSearch.addEventListener("keyup", handleSearch);
 
-FHIR.oauth2.ready()
-    .then((fhirClient) => {
-        client = fhirClient;
-        initializeApp(false);
-    })
-    .catch((error) => {
-        showError("SMART on FHIR 連線失敗", error);
-    });
+if (typeof FHIR !== "undefined" && FHIR.oauth2) {
+    FHIR.oauth2.ready()
+        .then((fhirClient) => {
+            client = fhirClient;
+            initializeApp(false);
+        })
+        .catch((error) => {
+            console.error("SMART on FHIR 初始化失敗:", error);
+            showError("SMART on FHIR 連線失敗", { message: "請點擊「載入範例」查看測試資料" });
+        });
+} else {
+    console.warn("非 SMART on FHIR 環境");
+    showError("非 SMART 環境", { message: "請點擊「載入範例」查看測試資料" });
+}
 
 async function initializeApp(forceReload) {
     if (!client) {
@@ -306,6 +312,13 @@ function renderFilters() {
 }
 
 function buildGraph() {
+    if (!graphContainer) {
+        console.error("找不到 graph 容器");
+        return;
+    }
+
+    console.log("開始建立圖形，病人資料:", patientResource);
+
     nodeMeta = new Map();
     resourceMap = new Map();
 
