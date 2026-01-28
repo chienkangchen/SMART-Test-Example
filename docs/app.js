@@ -83,6 +83,21 @@ fitBtn.addEventListener("click", () => network && network.fit({ animation: true 
 stabilizeBtn.addEventListener("click", () => network && network.stabilize());
 nodeSearch.addEventListener("keyup", handleSearch);
 
+const showIndirectCheckbox = document.getElementById("show-indirect");
+if (showIndirectCheckbox) {
+    showIndirectCheckbox.addEventListener("change", () => {
+        const showIndirect = showIndirectCheckbox.checked;
+        nodes.forEach((node) => {
+            if (nodeMeta.has(node.id)) {
+                const meta = nodeMeta.get(node.id);
+                const shouldBeHidden = meta.distance > 1 && !showIndirect;
+                nodes.update({ id: node.id, hidden: shouldBeHidden });
+            }
+        });
+        network && network.stabilize();
+    });
+}
+
 if (typeof FHIR !== "undefined" && FHIR.oauth2) {
     FHIR.oauth2.ready()
         .then((fhirClient) => {
@@ -380,9 +395,10 @@ function buildGraph() {
             shape: "dot",
             size: 18,
             font: {
-                color: "#0f172a",
+                color: "#e2e8f0",
                 face: "Segoe UI",
-                multi: true
+                multi: true,
+                size: 14
             },
             borderWidth: 2
         },
@@ -487,6 +503,10 @@ function buildGroupStyles() {
                     background: TYPE_COLORS.Patient,
                     border: "#1e40af"
                 }
+            },
+            font: {
+                color: "#ffffff",
+                size: 14
             }
         }
     };
@@ -500,6 +520,10 @@ function buildGroupStyles() {
                     background: TYPE_COLORS[type] || TYPE_COLORS.Unknown,
                     border: "#0f172a"
                 }
+            },
+            font: {
+                color: "#ffffff",
+                size: 14
             }
         };
     });
@@ -508,17 +532,18 @@ function buildGroupStyles() {
         color: {
             background: TYPE_COLORS.Unknown,
             border: "#ffffff"
+        },
+        font: {
+            color: "#ffffff",
+            size: 14
         }
     };
 
     return groups;
 }
 
-function addNode(nodeId, resource, group, displayText) {
-    console.log("addNode 被呼叫:", { nodeId, group, displayText });
-    
+function addNode(nodeId, resource, group, displayText, distance = 1) {
     if (nodeMeta.has(nodeId)) {
-        console.log("節點已存在，跳過:", nodeId);
         return;
     }
 
@@ -527,15 +552,15 @@ function addNode(nodeId, resource, group, displayText) {
         nodes.add({
             id: nodeId,
             label,
-            group: group || "Unknown"
+            group: group || "Unknown",
+            hidden: distance > 1
         });
-        console.log("節點已加入:", nodeId);
     } catch (err) {
         console.error("nodes.add 失敗:", err);
         throw err;
     }
 
-    nodeMeta.set(nodeId, { group });
+    nodeMeta.set(nodeId, { group, distance });
     if (resource && resource.resourceType) {
         resourceMap.set(nodeId, resource);
     }
@@ -584,7 +609,7 @@ function collectAndAddReferences(sourceNodeId, resource) {
         }
         const [type, id] = normalized.split("/");
         const label = id ? id : normalized;
-        addNode(normalized, null, type || "Unknown", label);
+        addNode(normalized, null, type || "Unknown", label, 2);
         addEdge(sourceNodeId, normalized, "ref");
     });
 }
