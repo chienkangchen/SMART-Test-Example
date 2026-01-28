@@ -15,14 +15,11 @@
             <header class="app-header">
                 <div class="title-block">
                     <h1><i class="fas fa-project-diagram"></i> 病人資源關聯圖</h1>
-                    <p>SMART on FHIR 患者資源總覽與關聯視覺化</p>
+                    <p>SMART on FHIR 病人資源總覽與關聯視覺化</p>
                 </div>
                 <div class="header-actions">
                     <button class="primary-btn" id="reload-btn">
                         <i class="fas fa-rotate"></i> 重新載入
-                    </button>
-                    <button class="secondary-btn" id="mock-btn">
-                        <i class="fas fa-flask"></i> 載入範例
                     </button>
                 </div>
             </header>
@@ -32,9 +29,9 @@
             <main class="app-main">
                 <aside class="panel panel-left">
                     <div class="panel-section">
-                        <h2><i class="fas fa-user"></i> 患者資訊</h2>
+                        <h2><i class="fas fa-user"></i> 病人資訊</h2>
                         <div id="patient-card" class="card">
-                            <div class="loading">載入患者資料中...</div>
+                            <div class="loading">載入病人資料中...</div>
                         </div>
                     </div>
 
@@ -54,7 +51,6 @@
                         </div>
                         <div class="toolbar-actions">
                             <button class="ghost-btn" id="fit-btn"><i class="fas fa-compress"></i> 置中</button>
-                            <button class="ghost-btn" id="stabilize-btn"><i class="fas fa-bolt"></i> 穩定布局</button>
                         </div>
                     </div>
                     <div id="graph" class="graph-canvas"></div>

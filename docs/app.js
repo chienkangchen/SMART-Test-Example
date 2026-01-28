@@ -238,9 +238,7 @@ const filterList = document.getElementById("filter-list");
 const detailCard = document.getElementById("detail-card");
 const errorBanner = document.getElementById("error-banner");
 const reloadBtn = document.getElementById("reload-btn");
-const mockBtn = document.getElementById("mock-btn");
 const fitBtn = document.getElementById("fit-btn");
-const stabilizeBtn = document.getElementById("stabilize-btn");
 const nodeSearch = document.getElementById("node-search");
 
 // 常用的 Resource 類型（默認顯示）
@@ -252,17 +250,7 @@ const COMMON_RESOURCES = new Set([
 ]);
 
 reloadBtn.addEventListener("click", () => initializeApp(true));
-mockBtn.addEventListener("click", () => loadMockScenario());
 fitBtn.addEventListener("click", () => network && network.fit({ animation: true }));
-stabilizeBtn.addEventListener("click", () => {
-    if (network) {
-        const nodeCount = nodes.length;
-        const iterations = nodeCount > 100 ? 50 : 300;
-        console.log(`穩定化圖形 (${nodeCount} 個節點, ${iterations} 次迭代)`);
-        network.physics.enabled = true;
-        network.stabilize({ iterations });
-    }
-});
 nodeSearch.addEventListener("keyup", handleSearch);
 
 // 資源篩選收合功能
@@ -310,7 +298,7 @@ async function initializeApp(forceReload) {
 
         const patientId = client.patient && client.patient.id ? client.patient.id : null;
         if (!patientId) {
-            throw new Error("找不到患者識別資訊，請確認 launch context。");
+            throw new Error("找不到病人識別資訊，請確認 launch context。");
         }
 
         patientResource = await requestAll(`Patient/${patientId}`);
@@ -487,7 +475,7 @@ async function loadResourcesIndividually(patientId) {
 
 function resetUI() {
     errorBanner.style.display = "none";
-    patientCard.innerHTML = "<div class=\"loading\">載入患者資料中...</div>";
+    patientCard.innerHTML = "<div class=\"loading\">載入病人資料中...</div>";
     statsCard.innerHTML = "<div class=\"loading\">統計載入中...</div>";
     filterList.innerHTML = "";
     detailCard.innerHTML = `
@@ -588,22 +576,63 @@ function mergeResources(current, incoming) {
 
 function renderPatientCard(patient) {
     if (!patient || !patient.id) {
-        patientCard.innerHTML = "<div class=\"empty-state\">找不到患者資料</div>";
+        patientCard.innerHTML = "<div class=\"empty-state\">找不到病人資料</div>";
         return;
     }
 
     const name = formatHumanName(patient.name && patient.name[0]);
     const gender = patient.gender ? patient.gender : "未知";
+    const genderIcon = gender === "male" ? "fa-mars" : gender === "female" ? "fa-venus" : "fa-circle-question";
     const birthDate = patient.birthDate ? patient.birthDate : "未知";
     const identifier = patient.identifier && patient.identifier[0] ? patient.identifier[0].value : "-";
+    
+    // 計算年齡
+    let age = "未知";
+    if (birthDate !== "未知") {
+        const today = new Date();
+        const birth = new Date(birthDate);
+        age = today.getFullYear() - birth.getFullYear();
+        const monthDiff = today.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+            age--;
+        }
+    }
 
     patientCard.innerHTML = `
-        <div class="patient-name">${name}</div>
-        <div class="patient-meta">
-            <div><span>性別</span>${gender}</div>
-            <div><span>生日</span>${birthDate}</div>
-            <div><span>ID</span>${patient.id}</div>
-            <div><span>識別碼</span>${identifier}</div>
+        <div class="patient-header">
+            <div class="patient-avatar">
+                <i class="fas ${genderIcon}"></i>
+            </div>
+            <div class="patient-title">
+                <div class="patient-name">${name}</div>
+                <div class="patient-id">ID: ${patient.id}</div>
+            </div>
+        </div>
+        <div class="patient-info-grid">
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-mars-and-venus"></i> 性別
+                </div>
+                <div class="info-value">${gender}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-calendar-birth"></i> 生日
+                </div>
+                <div class="info-value">${birthDate}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-cake-candles"></i> 年齡
+                </div>
+                <div class="info-value">${age} 歲</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="fas fa-fingerprint"></i> 識別碼
+                </div>
+                <div class="info-value info-code">${identifier}</div>
+            </div>
         </div>
     `;
 }
@@ -672,8 +701,8 @@ function buildGraph() {
 
     const patientNodeId = `Patient/${patientResource.id}`;
     
-    // 只添加患者和直接關聯的資源
-    addNode(patientNodeId, patientResource, "Patient", "患者");
+    // 只添加病人和直接關聯的資源
+    addNode(patientNodeId, patientResource, "Patient", "病人");
     expandedNodes.add(patientNodeId); // 標記 Patient 為已展開，避免重複處理
     nodes.update({
         id: patientNodeId,
@@ -683,7 +712,7 @@ function buildGraph() {
     });
     expandedNodes.add(patientNodeId);
 
-    // 添加患者的直接關聯資源（第一層）
+    // 添加病人的直接關聯資源（第一層）
     RESOURCE_TYPES.forEach((type) => {
         const resources = resourcesByType[type] || [];
         resources.forEach((resource) => {
@@ -1468,105 +1497,6 @@ function escapeHtml(value) {
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
-}
-
-function loadMockScenario() {
-    console.log("=== loadMockScenario 開始 ===");
-    resetUI();
-    setGraphLoading(true);
-
-    patientResource = {
-        resourceType: "Patient",
-        id: "MOCK-001",
-        name: [{ text: "測試病人" }],
-        gender: "female",
-        birthDate: "1980-01-01",
-        identifier: [{ value: "MOCK-ID" }]
-    };
-
-    resourcesByType = {
-        Encounter: [
-            {
-                resourceType: "Encounter",
-                id: "ENC-001",
-                status: "finished",
-                class: { code: "AMB", display: "門診" },
-                subject: { reference: "Patient/MOCK-001" }
-            }
-        ],
-        Condition: [
-            {
-                resourceType: "Condition",
-                id: "COND-001",
-                code: { text: "高血壓" },
-                subject: { reference: "Patient/MOCK-001" },
-                encounter: { reference: "Encounter/ENC-001" }
-            }
-        ],
-        Observation: [
-            {
-                resourceType: "Observation",
-                id: "OBS-001",
-                status: "final",
-                code: { text: "血壓" },
-                subject: { reference: "Patient/MOCK-001" },
-                encounter: { reference: "Encounter/ENC-001" }
-            },
-            {
-                resourceType: "Observation",
-                id: "OBS-002",
-                status: "final",
-                code: { text: "血糖" },
-                subject: { reference: "Patient/MOCK-001" }
-            }
-        ],
-        MedicationRequest: [
-            {
-                resourceType: "MedicationRequest",
-                id: "MED-001",
-                status: "active",
-                medicationCodeableConcept: { text: "Amlodipine" },
-                subject: { reference: "Patient/MOCK-001" }
-            }
-        ],
-        Procedure: [
-            {
-                resourceType: "Procedure",
-                id: "PROC-001",
-                status: "completed",
-                code: { text: "心電圖" },
-                subject: { reference: "Patient/MOCK-001" }
-            }
-        ],
-        Immunization: [],
-        AllergyIntolerance: [
-            {
-                resourceType: "AllergyIntolerance",
-                id: "ALG-001",
-                code: { text: "青黴素" },
-                patient: { reference: "Patient/MOCK-001" }
-            }
-        ],
-        DiagnosticReport: [],
-        CarePlan: [],
-        ServiceRequest: [],
-        QuestionnaireResponse: [],
-        DocumentReference: [],
-        ImagingStudy: []
-    };
-
-    console.log("Mock 資料準備完成");
-    renderPatientCard(patientResource);
-    console.log("Patient 卡片已渲染");
-    renderStats();
-    console.log("統計資訊已渲染");
-    renderFilters();
-    console.log("篩選器已渲染");
-    safeBuildGraph();
-    console.log("safeBuildGraph 已呼叫");
-    showError("已載入範例資料", { message: "此為測試用固定資料，確認圖形渲染功能。" });
-    setGraphLoading(false);
-    console.log("=== loadMockScenario 結束 ===");
 }
 
 function safeBuildGraph() {

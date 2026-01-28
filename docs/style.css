@@ -586,6 +586,98 @@ body {
     color: #1f2937;
 }
 
+/* 改進的病人卡片樣式 */
+.patient-header {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.patient-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.patient-title {
+    flex: 1;
+    min-width: 0;
+}
+
+.patient-title .patient-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 4px;
+}
+
+.patient-id {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-family: 'Courier New', monospace;
+}
+
+.patient-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.info-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.info-item:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.info-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-label i {
+    color: #667eea;
+    font-size: 0.9rem;
+}
+
+.info-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.info-code {
+    font-size: 0.85rem;
+    font-family: 'Courier New', monospace;
+    color: #667eea;
+    word-break: break-all;
+}
+
 .stats-grid {
     display: grid;
     gap: 10px;
@@ -984,7 +1076,7 @@ pre {
     display: none;
 }
 
-/* 患者信息卡片 */
+/* 病人信息卡片 */
 .patient-info-card {
     background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
     color: white;
@@ -1464,7 +1556,7 @@ pre {
         flex-direction: column;
     }
 
-    /* 患者信息網格調整 */
+    /* 病人信息網格調整 */
     .patient-info-grid {
         grid-template-columns: 1fr;
     }
@@ -1697,7 +1789,7 @@ pre {
         margin: 8px 0;
     }
 
-    /* 患者信息卡片調整 */
+    /* 病人信息卡片調整 */
     .patient-info-card {
         padding: 15px;
     }
