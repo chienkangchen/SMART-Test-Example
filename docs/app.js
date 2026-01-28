@@ -673,6 +673,7 @@ function buildGraph() {
     
     // 只添加患者和直接關聯的資源
     addNode(patientNodeId, patientResource, "Patient", "患者");
+    expandedNodes.add(patientNodeId); // 標記 Patient 為已展開，避免重複處理
     nodes.update({
         id: patientNodeId,
         shape: "star",
@@ -699,22 +700,22 @@ function buildGraph() {
             enabled: true,
             stabilization: {
                 enabled: true,
-                iterations: 100,
+                iterations: 50,
                 fit: true,
-                updateInterval: 25,
+                updateInterval: 10,
                 onlyDynamicEdges: false
             },
             barnesHut: {
                 gravitationalConstant: -25000,
                 springLength: 50,
-                springConstant: 0.12,
-                damping: 0.5,
+                springConstant: 0.15,
+                damping: 0.6,
                 avoidOverlap: 0.4
             },
-            maxVelocity: 40,
-            minVelocity: 0.1,
+            maxVelocity: 50,
+            minVelocity: 0.75,
             solver: "barnesHut",
-            timestep: 0.5,
+            timestep: 0.35,
             adaptiveTimestep: true
         },
         nodes: {
@@ -995,12 +996,12 @@ function expandNode(nodeId) {
         // 節點較少時臨時啟用物理引擎進行短暫穩定化
         if (network) {
             network.setOptions({ physics: true });
-            network.stabilize({ iterations: 30 });
+            network.stabilize({ iterations: 15 });
             
             // 穩定化完成後再次停用物理引擎
             setTimeout(() => {
                 network.setOptions({ physics: false });
-            }, 1000); // 給予1秒時間完成穩定化
+            }, 400); // 減少等待時間到400毫秒
         }
     }
     return true;
