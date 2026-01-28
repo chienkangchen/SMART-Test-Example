@@ -803,7 +803,9 @@ function buildGraph() {
                 }
             });
             
-            renderDetail(nodeId, connectedNodeIds);
+            renderDetail(nodeId, connectedNodeIds).catch((err) => {
+                console.error("renderDetail 失敗:", err);
+            });
         }
     });
 
@@ -1226,8 +1228,8 @@ function handleSearch(event) {
     }
 }
 
-function renderDetail(nodeId, connectedNodeIds) {
-    const resource = resourceMap.get(nodeId);
+async function renderDetail(nodeId, connectedNodeIds) {
+    let resource = resourceMap.get(nodeId);
 
     if (resource && resource.resourceType === "Patient") {
         detailCard.innerHTML = `
@@ -1238,11 +1240,41 @@ function renderDetail(nodeId, connectedNodeIds) {
     }
 
     if (!resource) {
+        // 嘗試從 FHIR 伺服器加載引用資源
         detailCard.innerHTML = `
             <h3>${nodeId}</h3>
-            <div class="empty-state">此節點為引用資源，尚未載入詳細資料。</div>
+            <div class="empty-state">
+                <i class="fas fa-spinner" style="animation: spin 1s linear infinite;"></i>
+                正在加載引用資源...
+            </div>
         `;
-        return;
+        
+        try {
+            // 解析節點 ID（例如 "Observation/OBS-001"）
+            const [resType, resId] = nodeId.split("/");
+            if (resType && resId && client) {
+                const loadedResource = await requestAll(`${resType}/${resId}`);
+                if (loadedResource) {
+                    // 將加載的資源存入 resourceMap
+                    resource = Array.isArray(loadedResource) ? loadedResource[0] : loadedResource;
+                    if (resource && resource.resourceType) {
+                        resourceMap.set(nodeId, resource);
+                        console.log(`已加載引用資源: ${nodeId}`);
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn(`加載引用資源失敗 (${nodeId}):`, error.message);
+        }
+        
+        // 如果仍無法加載，顯示錯誤訊息
+        if (!resource) {
+            detailCard.innerHTML = `
+                <h3>${nodeId}</h3>
+                <div class="empty-state">無法加載此引用資源的詳細資料。</div>
+            `;
+            return;
+        }
     }
 
     const title = `${resource.resourceType}`;
@@ -1337,7 +1369,9 @@ function renderDetail(nodeId, connectedNodeIds) {
                     });
                 });
                 
-                renderDetail(targetNodeId, connectedNodeIds);
+                renderDetail(targetNodeId, connectedNodeIds).catch((err) => {
+                    console.error("renderDetail 失敗:", err);
+                });
             }
         });
     });
