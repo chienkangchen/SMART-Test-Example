@@ -324,6 +324,7 @@ async function loadResourcesWithEverything(patientId) {
         let allResources = [];
         let nextUrl = `Patient/${patientId}/$everything?_count=500`;
         let pageCount = 0;
+        let totalEntriesReceived = 0;
 
         // 處理分頁
         while (nextUrl && pageCount < 10) { // 最多 10 頁，避免無限循環
@@ -335,9 +336,25 @@ async function loadResourcesWithEverything(patientId) {
                 const options = { pageLimit: 0, flat: true, timeout: 60000 };
                 const bundle = await client.request(nextUrl, options);
                 
+                console.log(`第 ${pageCount} 頁原始 Bundle:`, { 
+                    resourceType: bundle?.resourceType,
+                    total: bundle?.total,
+                    entryCount: bundle?.entry?.length,
+                    hasLink: !!bundle?.link
+                });
+
                 if (bundle && bundle.entry && Array.isArray(bundle.entry)) {
-                    allResources = allResources.concat(bundle.entry);
-                    console.log(`第 ${pageCount} 頁載入 ${bundle.entry.length} 項資源`);
+                    const pageEntries = bundle.entry;
+                    allResources = allResources.concat(pageEntries);
+                    totalEntriesReceived += pageEntries.length;
+                    console.log(`第 ${pageCount} 頁載入 ${pageEntries.length} 項資源 (累計: ${totalEntriesReceived})`);
+                    
+                    // 調試：顯示前幾個 entry 的結構
+                    if (pageCount === 1 && pageEntries.length > 0) {
+                        console.log("第一個 entry 結構:", pageEntries[0]);
+                    }
+                } else {
+                    console.warn(`第 ${pageCount} 頁沒有 entry 數組，Bundle 結構:`, bundle);
                 }
 
                 // 檢查是否有下一頁
@@ -361,6 +378,8 @@ async function loadResourcesWithEverything(patientId) {
 
         console.timeEnd("$everything 查詢耗時");
         
+        console.log(`$everything 分頁完成: 共 ${pageCount} 頁，${totalEntriesReceived} 項 entry`);
+        
         if (allResources.length === 0) {
             console.warn("$everything 返回空結果");
             return false;
@@ -372,25 +391,45 @@ async function loadResourcesWithEverything(patientId) {
             resourcesByType[type] = [];
         });
 
-        // 解析資源
-        allResources.forEach((entry) => {
-            const resource = entry.resource;
+        // 解析資源：處理多種可能的 entry 格式
+        allResources.forEach((entry, index) => {
+            let resource = null;
+            
+            // 可能的格式1：entry.resource
+            if (entry.resource) {
+                resource = entry.resource;
+            }
+            // 可能的格式2：entry 本身就是 resource
+            else if (entry.resourceType) {
+                resource = entry;
+            }
+            
             if (resource && resource.resourceType) {
                 const type = resource.resourceType;
-                if (RESOURCE_TYPES.includes(type)) {
-                    resourcesByType[type].push(resource);
-                } else if (!resourcesByType[type]) {
-                    resourcesByType[type] = [resource];
-                } else {
-                    resourcesByType[type].push(resource);
+                if (!resourcesByType[type]) {
+                    resourcesByType[type] = [];
+                }
+                resourcesByType[type].push(resource);
+                
+                if (index === 0) {
+                    console.log("解析第一個資源:", { type, id: resource.id });
+                }
+            } else {
+                if (index === 0) {
+                    console.warn("無法解析第一個 entry:", entry);
                 }
             }
         });
 
-        console.log("$everything 成功載入資源", Object.entries(resourcesByType).map(([type, items]) => `${type}: ${items.length}`));
+        const summary = Object.entries(resourcesByType)
+            .filter(([, items]) => items.length > 0)
+            .map(([type, items]) => `${type}: ${items.length}`)
+            .join(", ");
+        
+        console.log("$everything 成功載入資源:", summary);
         return true;
     } catch (error) {
-        console.error("$everything 查詢失敗:", error.message);
+        console.error("$everything 查詢失敗:", error.message, error);
         return false;
     }
 }
