@@ -851,8 +851,8 @@ function buildGroupStyles() {
                 background: TYPE_COLORS.Patient,
                 border: "#1e3a8a",
                 highlight: {
-                    background: TYPE_COLORS.Patient,
-                    border: "#1e40af"
+                    background: "#fbbf24",
+                    border: "#f59e0b"
                 }
             },
             font: {
@@ -868,12 +868,12 @@ function buildGroupStyles() {
                 background: TYPE_COLORS[type] || TYPE_COLORS.Unknown,
                 border: "#ffffff",
                 highlight: {
-                    background: TYPE_COLORS[type] || TYPE_COLORS.Unknown,
-                    border: "#0f172a"
+                    background: "#fbbf24",
+                    border: "#f59e0b"
                 }
             },
             font: {
-                color: "#ffffff",
+                color: "#1f2937",
                 size: 14
             }
         };
@@ -882,10 +882,14 @@ function buildGroupStyles() {
     groups.Unknown = {
         color: {
             background: TYPE_COLORS.Unknown,
-            border: "#ffffff"
+            border: "#ffffff",
+            highlight: {
+                background: "#fbbf24",
+                border: "#f59e0b"
+            }
         },
         font: {
-            color: "#ffffff",
+            color: "#1f2937",
             size: 14
         }
     };
