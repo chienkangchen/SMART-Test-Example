@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>病人資源關聯圖 - SMART on FHIR</title>
+        <link rel="icon" type="image/png" href="./favicon.png">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+        <link href="https://unpkg.com/vis-network@9.1.2/styles/vis-network.min.css" rel="stylesheet">
+        <link href="./style.css" rel="stylesheet">
+        <script src="./fhir-client.js"></script>
+        <script src="https://unpkg.com/vis-network@9.1.2/standalone/umd/vis-network.min.js"></script>
+    </head>
+    <body>
+        <div class="app">
+            <header class="app-header">
+                <div class="title-block">
+                    <img src="./logo.png" alt="Logo" class="header-logo">
+                    <div class="title-text">
+                        <h1>病人資源關聯圖</h1>
+                        <p>SMART on FHIR 病人資源總覽與關聯視覺化</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="primary-btn" id="reload-btn">
+                        <i class="fas fa-rotate"></i> 重新載入
+                    </button>
+                </div>
+            </header>
+
+            <div id="error-banner" class="error-banner" style="display: none;"></div>
+
+            <main class="app-main">
+                <aside class="panel panel-left">
+                    <div class="panel-section">
+                        <h2><i class="fas fa-user"></i> 病人資訊</h2>
+                        <div id="patient-card" class="card">
+                            <div class="loading">載入病人資料中...</div>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h2><i class="fas fa-chart-pie"></i> 資源概覽</h2>
+                        <div id="stats-card" class="card stats-grid">
+                            <div class="loading">統計載入中...</div>
+                        </div>
+                    </div>
+                </aside>
+
+                <section class="panel panel-center">
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <i class="fas fa-magnifying-glass"></i>
+                            <input id="node-search" type="text" placeholder="搜尋 Resource 類型或 ID..." />
+                        </div>
+                        <div class="toolbar-actions">
+                            <button class="ghost-btn" id="fit-btn"><i class="fas fa-compress"></i> 置中</button>
+                        </div>
+                    </div>
+                    <div id="graph" class="graph-canvas"></div>
+                    <div id="graph-loading" class="graph-loading" style="display: none;">
+                        <i class="fas fa-spinner"></i> 正在建立關聯圖...
+                    </div>
+                </section>
+
+                <aside class="panel panel-right">
+                    <div class="panel-section">
+                        <h2 class="collapsible-header">
+                            <span><i class="fas fa-filter"></i> 資源篩選</span>
+                            <i class="fas fa-chevron-up collapse-icon" id="filter-collapse-icon"></i>
+                        </h2>
+                        <div id="filter-list" class="filter-list collapsible-content"></div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h2><i class="fas fa-circle-info"></i> 資源詳情</h2>
+                        <div id="detail-card" class="card">
+                            <div class="empty-state">
+                                <i class="fas fa-hand-pointer"></i>
+                                點選節點查看詳細資訊
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </main>
+        </div>
+
+        <script src="./app.js"></script>
+    </body>
+</html>
