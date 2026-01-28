@@ -558,15 +558,39 @@ function addEdge(from, to, label) {
 
 function expandNode(nodeId) {
     console.log("展開節點:", nodeId);
+    
+    if (expandedNodes.has(nodeId)) {
+        return; // 已經展開過
+    }
+    
     expandedNodes.add(nodeId);
     
     // 從 resourceMap 中查找該節點的資源
     const resource = resourceMap.get(nodeId);
     
     if (resource) {
+        // 停止物理模擬，避免現有節點位置亂跑
+        network && network.stopSimulation();
+        
+        // 固定已展開的節點位置
+        expandedNodes.forEach((id) => {
+            const node = nodes.get(id);
+            if (node) {
+                nodes.update({
+                    id: id,
+                    physics: false
+                });
+            }
+        });
+        
         // 收集並添加該資源的所有 references
         collectAndAddReferences(nodeId, resource);
-        network && network.stabilize();
+        
+        // 重新啟動物理模擬
+        if (network) {
+            network.startSimulation();
+            network.stabilize({ iterations: 100 });
+        }
     }
 }
 
