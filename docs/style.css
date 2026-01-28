@@ -432,6 +432,23 @@ body {
     box-shadow: 0 20px 30px rgba(15, 23, 42, 0.35);
 }
 
+.title-block {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-logo {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
+}
+
+.title-text {
+    display: flex;
+    flex-direction: column;
+}
+
 .title-block h1 {
     font-size: 2rem;
     font-weight: 600;

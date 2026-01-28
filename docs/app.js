@@ -857,7 +857,10 @@ function buildGroupStyles() {
             },
             font: {
                 color: "#ffffff",
-                size: 14
+                size: 14,
+                highlight: {
+                    color: "#1f2937"
+                }
             }
         }
     };
@@ -873,8 +876,11 @@ function buildGroupStyles() {
                 }
             },
             font: {
-                color: "#1f2937",
-                size: 14
+                color: "#ffffff",
+                size: 14,
+                highlight: {
+                    color: "#1f2937"
+                }
             }
         };
     });
@@ -889,8 +895,11 @@ function buildGroupStyles() {
             }
         },
         font: {
-            color: "#1f2937",
-            size: 14
+            color: "#ffffff",
+            size: 14,
+            highlight: {
+                color: "#1f2937"
+            }
         }
     };
 
