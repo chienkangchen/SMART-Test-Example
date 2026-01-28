@@ -705,11 +705,11 @@ function buildGraph() {
                 onlyDynamicEdges: false
             },
             barnesHut: {
-                gravitationalConstant: -15000,
-                springLength: 80,
-                springConstant: 0.08,
-                damping: 0.4,
-                avoidOverlap: 0.3
+                gravitationalConstant: -25000,
+                springLength: 50,
+                springConstant: 0.12,
+                damping: 0.5,
+                avoidOverlap: 0.4
             },
             maxVelocity: 40,
             minVelocity: 0.1,
