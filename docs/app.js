@@ -237,17 +237,19 @@ const statsCard = document.getElementById("stats-card");
 const filterList = document.getElementById("filter-list");
 const detailCard = document.getElementById("detail-card");
 const errorBanner = document.getElementById("error-banner");
-
 const reloadBtn = document.getElementById("reload-btn");
 const mockBtn = document.getElementById("mock-btn");
 const fitBtn = document.getElementById("fit-btn");
 const stabilizeBtn = document.getElementById("stabilize-btn");
 const nodeSearch = document.getElementById("node-search");
-const dateFrom = document.getElementById("date-from");
-const dateTo = document.getElementById("date-to");
-const clearDateBtn = document.getElementById("clear-date-btn");
 
-let dateFilter = { from: null, to: null };
+// 常用的 Resource 類型（默認顯示）
+const COMMON_RESOURCES = new Set([
+    "Patient", "Observation", "Condition", "Procedure", 
+    "Encounter", "MedicationStatement", "Immunization",
+    "DiagnosticReport", "AllergyIntolerance", "Medication",
+    "Claim", "ExplanationOfBenefit", "CarePlan", "Goal"
+]);
 
 reloadBtn.addEventListener("click", () => initializeApp(true));
 mockBtn.addEventListener("click", () => loadMockScenario());
@@ -262,24 +264,6 @@ stabilizeBtn.addEventListener("click", () => {
     }
 });
 nodeSearch.addEventListener("keyup", handleSearch);
-
-dateFrom.addEventListener("change", () => {
-    dateFilter.from = dateFrom.value ? new Date(dateFrom.value) : null;
-    applyDateFilter();
-});
-
-dateTo.addEventListener("change", () => {
-    dateFilter.to = dateTo.value ? new Date(dateTo.value + "T23:59:59") : null;
-    applyDateFilter();
-});
-
-clearDateBtn.addEventListener("click", () => {
-    dateFrom.value = "";
-    dateTo.value = "";
-    dateFilter.from = null;
-    dateFilter.to = null;
-    applyDateFilter();
-});
 
 if (typeof FHIR !== "undefined" && FHIR.oauth2) {
     FHIR.oauth2.ready()
@@ -637,9 +621,11 @@ function renderStats() {
 function renderFilters() {
     filterList.innerHTML = RESOURCE_TYPES.map((type) => {
         const count = (resourcesByType[type] || []).length;
+        const isCommon = COMMON_RESOURCES.has(type);
+        const isChecked = isCommon ? "checked" : ""; // 常用的預設勾選，不常用的預設不勾選
         return `
             <label class="filter-item">
-                <input type="checkbox" data-type="${type}" checked />
+                <input type="checkbox" data-type="${type}" ${isChecked} />
                 <span class="filter-color" style="background: ${TYPE_COLORS[type] || TYPE_COLORS.Unknown}"></span>
                 <span class="filter-text">${RESOURCE_LABELS[type] || type}</span>
                 <span class="filter-count">${count}</span>
@@ -650,6 +636,9 @@ function renderFilters() {
     filterList.querySelectorAll("input[type=checkbox]").forEach((checkbox) => {
         checkbox.addEventListener("change", updateVisibility);
     });
+    
+    // 初始化時應用篩選
+    updateVisibility();
 }
 
 let expandedNodes = new Set();
@@ -1188,12 +1177,7 @@ function updateVisibility() {
         }
         const meta = nodeMeta.get(node.id);
         const group = meta && meta.group ? meta.group : "Unknown";
-        const typeMatch = selectedTypes.has(group) || group === "Unknown";
-        
-        // 檢查日期過濾
-        const dateMatch = checkDateFilter(node.id);
-        
-        const shouldShow = typeMatch && dateMatch;
+        const shouldShow = selectedTypes.has(group) || group === "Unknown";
         nodes.update({ id: node.id, hidden: !shouldShow });
     });
 
@@ -1203,84 +1187,6 @@ function updateVisibility() {
         const hidden = (fromNode && fromNode.hidden) || (toNode && toNode.hidden);
         edges.update({ id: edge.id, hidden });
     });
-}
-
-function applyDateFilter() {
-    updateVisibility();
-    if (network) {
-        network.fit({ animation: true });
-    }
-}
-
-function checkDateFilter(nodeId) {
-    // 如果沒有設定日期過濾，顯示所有
-    if (!dateFilter.from && !dateFilter.to) {
-        return true;
-    }
-    
-    const resource = resourceMap.get(nodeId);
-    if (!resource) {
-        return true; // 沒有資源數據，預設顯示
-    }
-    
-    // 提取資源的日期
-    const resourceDate = extractResourceDate(resource);
-    if (!resourceDate) {
-        return true; // 沒有日期資訊，預設顯示
-    }
-    
-    // 檢查日期是否在範圍內
-    if (dateFilter.from && resourceDate < dateFilter.from) {
-        return false;
-    }
-    if (dateFilter.to && resourceDate > dateFilter.to) {
-        return false;
-    }
-    
-    return true;
-}
-
-function extractResourceDate(resource) {
-    // 嘗試從各種日期欄位提取日期
-    const dateFields = [
-        'effectiveDateTime',
-        'authoredOn',
-        'issued',
-        'date',
-        'recordedDate',
-        'assertedDate',
-        'onsetDateTime',
-        'abatementDateTime',
-        'performedDateTime',
-        'occurrenceDateTime',
-        'created',
-        'period.start',
-        'effectivePeriod.start'
-    ];
-    
-    for (const field of dateFields) {
-        let value = resource;
-        const parts = field.split('.');
-        
-        for (const part of parts) {
-            if (value && value[part]) {
-                value = value[part];
-            } else {
-                value = null;
-                break;
-            }
-        }
-        
-        if (value && typeof value === 'string') {
-            try {
-                return new Date(value);
-            } catch (e) {
-                continue;
-            }
-        }
-    }
-    
-    return null;
 }
 
 function handleSearch(event) {
