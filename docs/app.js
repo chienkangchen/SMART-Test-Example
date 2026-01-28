@@ -584,7 +584,6 @@ function renderPatientCard(patient) {
     const gender = patient.gender ? patient.gender : "未知";
     const genderIcon = gender === "male" ? "fa-mars" : gender === "female" ? "fa-venus" : "fa-circle-question";
     const birthDate = patient.birthDate ? patient.birthDate : "未知";
-    const identifier = patient.identifier && patient.identifier[0] ? patient.identifier[0].value : "-";
     
     // 計算年齡
     let age = "未知";
@@ -605,34 +604,12 @@ function renderPatientCard(patient) {
             </div>
             <div class="patient-title">
                 <div class="patient-name">${name}</div>
-                <div class="patient-id">ID: ${patient.id}</div>
             </div>
         </div>
-        <div class="patient-info-grid">
-            <div class="info-item">
-                <div class="info-label">
-                    <i class="fas fa-mars-and-venus"></i> 性別
-                </div>
-                <div class="info-value">${gender}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">
-                    <i class="fas fa-calendar-birth"></i> 生日
-                </div>
-                <div class="info-value">${birthDate}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">
-                    <i class="fas fa-cake-candles"></i> 年齡
-                </div>
-                <div class="info-value">${age} 歲</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">
-                    <i class="fas fa-fingerprint"></i> 識別碼
-                </div>
-                <div class="info-value info-code">${identifier}</div>
-            </div>
+        <div class="patient-info">
+            <div class="info-row">性別: <span class="info-value">${gender}</span></div>
+            <div class="info-row">生日: <span class="info-value">${birthDate}</span></div>
+            <div class="info-row">年齡: <span class="info-value">${age} 歲</span></div>
         </div>
     `;
 }
@@ -644,16 +621,17 @@ function renderStats() {
         const count = (resourcesByType[type] || []).length;
         return `
             <div class="stat-item" style="border-color: ${TYPE_COLORS[type] || TYPE_COLORS.Unknown};">
-                <div class="stat-count">${count}</div>
                 <div class="stat-label">${RESOURCE_LABELS[type] || type}</div>
+                <div class="stat-count">${count}</div>
+                <div class="stat-type">${type}</div>
             </div>
         `;
     }).join("");
 
     statsCard.innerHTML = `
         <div class="stat-item stat-total">
-            <div class="stat-count">${totalResources}</div>
             <div class="stat-label">總資源數</div>
+            <div class="stat-count">${totalResources}</div>
         </div>
         ${statsHtml}
     `;
@@ -669,6 +647,7 @@ function renderFilters() {
                 <input type="checkbox" data-type="${type}" ${isChecked} />
                 <span class="filter-color" style="background: ${TYPE_COLORS[type] || TYPE_COLORS.Unknown}"></span>
                 <span class="filter-text">${RESOURCE_LABELS[type] || type}</span>
+                <span class="filter-type">${type}</span>
                 <span class="filter-count">${count}</span>
             </label>
         `;
