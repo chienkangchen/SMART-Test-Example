@@ -425,7 +425,7 @@ body {
 .app-header {
     background: linear-gradient(135deg, #1d4ed8 0%, #0ea5e9 100%);
     color: #fff;
-    padding: 24px 32px;
+    padding: 20px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -435,11 +435,10 @@ body {
 .title-block {
     display: flex;
     align-items: center;
-    gap: 16px;
 }
 
 .header-logo {
-    height: 50px;
+    height: 70px;
     width: auto;
     object-fit: contain;
 }
