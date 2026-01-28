@@ -305,11 +305,9 @@ async function initializeApp(forceReload) {
         renderPatientCard(patientResource);
 
         // 優先使用 $everything 方式
-        console.log("嘗試使用 $everything 載入所有資源...");
         const success = await loadResourcesWithEverything(patientId);
         
         if (!success) {
-            console.log("$everything 失敗，降級為逐個查詢...");
             await loadResourcesIndividually(patientId);
         }
 
@@ -336,7 +334,6 @@ async function loadResourcesWithEverything(patientId) {
         // 處理分頁
         while (nextUrl && pageCount < 10) { // 最多 10 頁，避免無限循環
             pageCount++;
-            console.log(`$everything 第 ${pageCount} 頁...`);
             
             try {
                 // 增加超時時間到 60 秒，用於大量資源
@@ -348,10 +345,8 @@ async function loadResourcesWithEverything(patientId) {
                 // flat: true 會直接返回資源數組，而不是 Bundle 結構
                 if (Array.isArray(response)) {
                     pageEntries = response;
-                    console.log(`第 ${pageCount} 頁返回直接數組: ${pageEntries.length} 項資源`);
                 } else if (response && response.entry && Array.isArray(response.entry)) {
                     pageEntries = response.entry;
-                    console.log(`第 ${pageCount} 頁返回 Bundle 結構: ${pageEntries.length} 項資源`);
                 } else {
                     console.warn(`第 ${pageCount} 頁返回未知結構:`, response);
                 }
@@ -359,12 +354,6 @@ async function loadResourcesWithEverything(patientId) {
                 if (pageEntries.length > 0) {
                     allResources = allResources.concat(pageEntries);
                     totalEntriesReceived += pageEntries.length;
-                    console.log(`第 ${pageCount} 頁載入 ${pageEntries.length} 項資源 (累計: ${totalEntriesReceived})`);
-                    
-                    // 調試：顯示前幾個資源的結構
-                    if (pageCount === 1) {
-                        console.log("第一個資源:", pageEntries[0]);
-                    }
                 }
 
                 // 檢查是否有下一頁
@@ -385,10 +374,6 @@ async function loadResourcesWithEverything(patientId) {
                 throw pageError;
             }
         }
-
-        console.timeEnd("$everything 查詢耗時");
-        
-        console.log(`$everything 分頁完成: 共 ${pageCount} 頁，${totalEntriesReceived} 項 entry`);
         
         if (allResources.length === 0) {
             console.warn("$everything 返回空結果");
@@ -420,10 +405,6 @@ async function loadResourcesWithEverything(patientId) {
                     resourcesByType[type] = [];
                 }
                 resourcesByType[type].push(resource);
-                
-                if (index === 0) {
-                    console.log("解析第一個資源:", { type, id: resource.id });
-                }
             } else {
                 if (index === 0) {
                     console.warn("無法解析第一個資源:", item);
@@ -436,7 +417,6 @@ async function loadResourcesWithEverything(patientId) {
             .map(([type, items]) => `${type}: ${items.length}`)
             .join(", ");
         
-        console.log("$everything 成功載入資源:", summary);
         return true;
     } catch (error) {
         console.error("$everything 查詢失敗:", error.message, error);
@@ -455,9 +435,6 @@ async function loadResourcesIndividually(patientId) {
         try {
             const result = await fetchResourcesForType(type, patientId);
             resourcesByType[type] = result;
-            if (result.length > 0) {
-                console.log(`${type}: ${result.length} 項`);
-            }
         } catch (error) {
             resourcesByType[type] = [];
             failures.push({ type, error: error.message });
@@ -621,17 +598,16 @@ function renderStats() {
         const count = (resourcesByType[type] || []).length;
         return `
             <div class="stat-item" style="border-color: ${TYPE_COLORS[type] || TYPE_COLORS.Unknown};">
-                <div class="stat-label">${RESOURCE_LABELS[type] || type}</div>
                 <div class="stat-count">${count}</div>
-                <div class="stat-type">${type}</div>
+                <div class="stat-label">${RESOURCE_LABELS[type] || type} <span class="stat-type">${type}</span></div>
             </div>
         `;
     }).join("");
 
     statsCard.innerHTML = `
         <div class="stat-item stat-total">
-            <div class="stat-label">總資源數</div>
             <div class="stat-count">${totalResources}</div>
+            <div class="stat-label">總資源數</div>
         </div>
         ${statsHtml}
     `;
@@ -646,9 +622,7 @@ function renderFilters() {
             <label class="filter-item">
                 <input type="checkbox" data-type="${type}" ${isChecked} />
                 <span class="filter-color" style="background: ${TYPE_COLORS[type] || TYPE_COLORS.Unknown}"></span>
-                <span class="filter-text">${RESOURCE_LABELS[type] || type}</span>
-                <span class="filter-type">${type}</span>
-                <span class="filter-count">${count}</span>
+                <span class="filter-text">${RESOURCE_LABELS[type] || type} <span class="filter-type">${type}</span></span>
             </label>
         `;
     }).join("");
@@ -664,10 +638,7 @@ function renderFilters() {
 let expandedNodes = new Set();
 
 function buildGraph() {
-    console.log("=== buildGraph 開始 ===");
-    
     if (!graphContainer) {
-        console.error("找不到 graph 容器");
         return;
     }
 
@@ -750,11 +721,7 @@ function buildGraph() {
         groups: buildGroupStyles()
     };
 
-    console.log(`準備建立網路圖，節點數: ${nodes.length}，邊數: ${edges.length}`);
-    
     network = new vis.Network(graphContainer, { nodes, edges }, options);
-    
-    console.log("vis.Network 已建立", network);
 
     // 監聽穩定化完成事件，自動停用物理引擎
     network.on("stabilizationIterationsDone", () => {
@@ -970,8 +937,6 @@ function addEdge(from, to, label) {
 }
 
 function expandNode(nodeId) {
-    console.log("展開節點:", nodeId);
-    
     if (expandedNodes.has(nodeId)) {
         return false; // 已經展開過
     }
@@ -1282,7 +1247,6 @@ async function renderDetail(nodeId, connectedNodeIds) {
                     resource = Array.isArray(loadedResource) ? loadedResource[0] : loadedResource;
                     if (resource && resource.resourceType) {
                         resourceMap.set(nodeId, resource);
-                        console.log(`已加載引用資源: ${nodeId}`);
                         
                         // 移除節點的加載標記
                         if (nodes && nodes.get(nodeId)) {

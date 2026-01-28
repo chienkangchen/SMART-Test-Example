@@ -650,8 +650,9 @@ body {
     padding: 10px 12px;
     border-left: 4px solid #94a3b8;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
 }
 
 .stat-item.stat-total {
@@ -661,15 +662,16 @@ body {
 }
 
 .stat-count {
-    font-size: 1.2rem;
+    font-size: 1.6rem;
     font-weight: 700;
     color: #1d4ed8;
+    line-height: 1;
 }
 
 .stat-label {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    color: #1f2937;
+    color: #64748b;
 }
 
 .stat-item.stat-total .stat-label,
@@ -681,6 +683,7 @@ body {
     font-size: 0.7rem;
     color: #94a3b8;
     font-family: 'Courier New', monospace;
+    margin-left: 4px;
 }
 
 .filter-list {
@@ -691,7 +694,7 @@ body {
 
 .filter-item {
     display: grid;
-    grid-template-columns: auto auto 1fr auto;
+    grid-template-columns: auto auto 1fr;
     align-items: center;
     gap: 8px;
     font-size: 0.85rem;
