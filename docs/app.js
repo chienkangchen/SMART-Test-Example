@@ -613,16 +613,69 @@ function expandNode(nodeId) {
     const resource = resourceMap.get(nodeId);
     
     if (resource) {
-        // 收集並添加該資源的所有 references
+        // 1. 收集並添加該資源引用的資源（正向引用）
         collectAndAddReferences(nodeId, resource);
-        
-        // 重新啟動物理模擬
-        if (network) {
-            network.stabilize({ iterations: 100 });
-        }
-        return true;
     }
-    return false;
+    
+    // 2. 查找所有引用該節點的資源（反向引用）
+    const referencingResources = findReferencingResources(nodeId);
+    referencingResources.forEach(([srcNodeId, srcResource]) => {
+        if (!expandedNodes.has(srcNodeId)) {
+            expandedNodes.add(srcNodeId);
+            collectAndAddReferences(srcNodeId, srcResource);
+        }
+    });
+    
+    // 重新啟動物理模擬
+    if (network) {
+        network.stabilize({ iterations: 100 });
+    }
+    return true;
+}
+
+function findReferencingResources(targetNodeId) {
+    const results = [];
+    
+    // 遍歷所有已載入的資源
+    RESOURCE_TYPES.forEach((type) => {
+        const resources = resourcesByType[type] || [];
+        resources.forEach((resource) => {
+            const nodeId = `${resource.resourceType}/${resource.id}`;
+            
+            // 檢查該資源是否引用目標節點
+            if (resourceReferences(resource, targetNodeId)) {
+                results.push([nodeId, resource]);
+            }
+        });
+    });
+    
+    return results;
+}
+
+function resourceReferences(resource, targetNodeId) {
+    const references = new Set();
+    
+    const walk = (value) => {
+        if (!value) {
+            return;
+        }
+        if (Array.isArray(value)) {
+            value.forEach(walk);
+            return;
+        }
+        if (typeof value === "object") {
+            if (value.reference && typeof value.reference === "string") {
+                const normalized = normalizeReference(value.reference);
+                if (normalized) {
+                    references.add(normalized);
+                }
+            }
+            Object.values(value).forEach(walk);
+        }
+    };
+    
+    walk(resource);
+    return references.has(targetNodeId);
 }
 
 function collectAndAddReferences(sourceNodeId, resource) {
