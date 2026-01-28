@@ -334,33 +334,36 @@ async function loadResourcesWithEverything(patientId) {
             try {
                 // 增加超時時間到 60 秒，用於大量資源
                 const options = { pageLimit: 0, flat: true, timeout: 60000 };
-                const bundle = await client.request(nextUrl, options);
+                const response = await client.request(nextUrl, options);
                 
-                console.log(`第 ${pageCount} 頁原始 Bundle:`, { 
-                    resourceType: bundle?.resourceType,
-                    total: bundle?.total,
-                    entryCount: bundle?.entry?.length,
-                    hasLink: !!bundle?.link
-                });
+                let pageEntries = [];
+                
+                // flat: true 會直接返回資源數組，而不是 Bundle 結構
+                if (Array.isArray(response)) {
+                    pageEntries = response;
+                    console.log(`第 ${pageCount} 頁返回直接數組: ${pageEntries.length} 項資源`);
+                } else if (response && response.entry && Array.isArray(response.entry)) {
+                    pageEntries = response.entry;
+                    console.log(`第 ${pageCount} 頁返回 Bundle 結構: ${pageEntries.length} 項資源`);
+                } else {
+                    console.warn(`第 ${pageCount} 頁返回未知結構:`, response);
+                }
 
-                if (bundle && bundle.entry && Array.isArray(bundle.entry)) {
-                    const pageEntries = bundle.entry;
+                if (pageEntries.length > 0) {
                     allResources = allResources.concat(pageEntries);
                     totalEntriesReceived += pageEntries.length;
                     console.log(`第 ${pageCount} 頁載入 ${pageEntries.length} 項資源 (累計: ${totalEntriesReceived})`);
                     
-                    // 調試：顯示前幾個 entry 的結構
-                    if (pageCount === 1 && pageEntries.length > 0) {
-                        console.log("第一個 entry 結構:", pageEntries[0]);
+                    // 調試：顯示前幾個資源的結構
+                    if (pageCount === 1) {
+                        console.log("第一個資源:", pageEntries[0]);
                     }
-                } else {
-                    console.warn(`第 ${pageCount} 頁沒有 entry 數組，Bundle 結構:`, bundle);
                 }
 
                 // 檢查是否有下一頁
                 nextUrl = null;
-                if (bundle && bundle.link) {
-                    const nextLink = bundle.link.find((link) => link.relation === "next");
+                if (response && response.link) {
+                    const nextLink = response.link.find((link) => link.relation === "next");
                     if (nextLink && nextLink.url) {
                         nextUrl = nextLink.url;
                     }
@@ -391,17 +394,17 @@ async function loadResourcesWithEverything(patientId) {
             resourcesByType[type] = [];
         });
 
-        // 解析資源：處理多種可能的 entry 格式
-        allResources.forEach((entry, index) => {
+        // 解析資源：flat: true 返回的直接是資源對象，無需再從 entry.resource 提取
+        allResources.forEach((item, index) => {
             let resource = null;
             
-            // 可能的格式1：entry.resource
-            if (entry.resource) {
-                resource = entry.resource;
+            // 格式1：flat: true 時返回的直接是資源對象
+            if (item.resourceType) {
+                resource = item;
             }
-            // 可能的格式2：entry 本身就是 resource
-            else if (entry.resourceType) {
-                resource = entry;
+            // 格式2：未使用 flat 時，可能是 entry.resource
+            else if (item.resource && item.resource.resourceType) {
+                resource = item.resource;
             }
             
             if (resource && resource.resourceType) {
@@ -416,7 +419,7 @@ async function loadResourcesWithEverything(patientId) {
                 }
             } else {
                 if (index === 0) {
-                    console.warn("無法解析第一個 entry:", entry);
+                    console.warn("無法解析第一個資源:", item);
                 }
             }
         });
