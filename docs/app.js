@@ -394,6 +394,51 @@ function buildGraph() {
     updateVisibility();
 }
 
+function renderFallbackGraph(message) {
+    graphContainer.innerHTML = "";
+    graphContainer.style.display = "block";
+
+    const header = document.createElement("div");
+    header.className = "fallback-title";
+    header.textContent = message;
+    graphContainer.appendChild(header);
+
+    const list = document.createElement("div");
+    list.className = "fallback-list";
+
+    const items = [];
+    if (patientResource && patientResource.id) {
+        items.push({
+            type: "Patient",
+            id: patientResource.id,
+            label: formatHumanName(patientResource.name?.[0])
+        });
+    }
+
+    RESOURCE_TYPES.forEach((type) => {
+        (resourcesByType[type] || []).forEach((resource) => {
+            items.push({
+                type,
+                id: resource.id,
+                label: getResourceDisplay(resource)
+            });
+        });
+    });
+
+    items.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "fallback-card";
+        card.innerHTML = `
+            <div class="fallback-type" style="color: ${TYPE_COLORS[item.type] || TYPE_COLORS.Unknown};">${item.type}</div>
+            <div class="fallback-label">${item.label || "(無標題)"}</div>
+            <div class="fallback-id">${item.id || "-"}</div>
+        `;
+        list.appendChild(card);
+    });
+
+    graphContainer.appendChild(list);
+}
+
 function buildGroupStyles() {
     const groups = {
         Patient: {
@@ -801,7 +846,20 @@ function loadMockScenario() {
     renderPatientCard(patientResource);
     renderStats();
     renderFilters();
-    buildGraph();
+    safeBuildGraph();
     showError("已載入範例資料", { message: "此為測試用固定資料，確認圖形渲染功能。" });
     setGraphLoading(false);
+}
+
+function safeBuildGraph() {
+    try {
+        if (typeof vis === "undefined") {
+            renderFallbackGraph("未載入 vis-network，改用靜態清單顯示。");
+            return;
+        }
+        buildGraph();
+    } catch (error) {
+        showError("關聯圖渲染失敗", error);
+        renderFallbackGraph("關聯圖渲染失敗，改用靜態清單顯示。");
+    }
 }
