@@ -1334,30 +1334,30 @@ async function renderDetail(nodeId, connectedNodeIds) {
 
 function buildResourceSummary(resource) {
     const rows = [];
-    rows.push(`<div><span>ID</span>${resource.id || "-"}</div>`);
+    rows.push(`<div class="summary-row"><span>ID</span><span>${resource.id || "-"}</span></div>`);
 
     if (resource.status) {
-        rows.push(`<div><span>狀態</span>${resource.status}</div>`);
+        rows.push(`<div class="summary-row"><span>狀態</span><span>${resource.status}</span></div>`);
     }
 
     if (resource.code) {
-        rows.push(`<div><span>代碼</span>${resource.code.text || getCodingDisplay(resource.code.coding) || "-"}</div>`);
+        rows.push(`<div class="summary-row"><span>代碼</span><span>${resource.code.text || getCodingDisplay(resource.code.coding) || "-"}</span></div>`);
     }
 
     if (resource.effectiveDateTime) {
-        rows.push(`<div><span>日期</span>${resource.effectiveDateTime}</div>`);
+        rows.push(`<div class="summary-row"><span>日期</span><span>${resource.effectiveDateTime}</span></div>`);
     }
 
     if (resource.authoredOn) {
-        rows.push(`<div><span>日期</span>${resource.authoredOn}</div>`);
+        rows.push(`<div class="summary-row"><span>日期</span><span>${resource.authoredOn}</span></div>`);
     }
 
     if (resource.issued) {
-        rows.push(`<div><span>發布</span>${resource.issued}</div>`);
+        rows.push(`<div class="summary-row"><span>發布</span><span>${resource.issued}</span></div>`);
     }
 
     if (resource.subject && resource.subject.reference) {
-        rows.push(`<div><span>Subject</span>${resource.subject.reference}</div>`);
+        rows.push(`<div class="summary-row"><span>Subject</span><span>${resource.subject.reference}</span></div>`);
     }
 
     return rows.join("");

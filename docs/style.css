@@ -839,20 +839,31 @@ body {
 }
 
 .detail-summary {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: 6px;
     margin-bottom: 12px;
     font-size: 0.85rem;
 }
 
-.detail-summary div {
+.summary-row {
     display: flex;
     justify-content: space-between;
     gap: 12px;
+    align-items: center;
 }
 
-.detail-summary span {
+.summary-row span:first-child {
     font-weight: 600;
+    color: #64748b;
+    flex-shrink: 0;
+    min-width: 60px;
+}
+
+.summary-row span:last-child {
+    color: #1f2937;
+    text-align: right;
+    word-break: break-word;
 }
 
 .related-section {
