@@ -76,6 +76,11 @@ const RESOURCE_TYPES = [
 ];
 
 const RESOURCE_LABELS = {
+    // Core
+    Patient: "病人",
+    Practitioner: "執業人員",
+    Organization: "組織",
+    
     // Clinical
     AllergyIntolerance: "過敏",
     CarePlan: "照護計畫",
