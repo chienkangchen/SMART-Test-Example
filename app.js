@@ -1934,7 +1934,7 @@ function getResourceDate(resource) {
 }
 
 // 顯示初始的所有資源列表
-function renderInitialResourceList() {
+async function renderInitialResourceList() {
     if (!detailCard || !patientResource) {
         return;
     }
