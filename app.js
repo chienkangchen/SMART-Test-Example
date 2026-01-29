@@ -1566,6 +1566,12 @@ function buildResourceSummary(resource) {
         case "AllergyIntolerance":
             buildAllergySummary(resource, rows);
             break;
+        case "Organization":
+            buildOrganizationSummary(resource, rows);
+            break;
+        case "Practitioner":
+            buildPractitionerSummary(resource, rows);
+            break;
         default:
             buildGenericSummary(resource, rows);
             break;
@@ -2227,6 +2233,74 @@ function buildAllergySummary(resource, rows) {
 }
 
 // 通用摘要（其他資源類型）
+function buildOrganizationSummary(resource, rows) {
+    // 組織名稱
+    if (resource.name) {
+        rows.push(`<div class="summary-row"><span>名稱</span><span><strong>${resource.name}</strong></span></div>`);
+    }
+    
+    // 組織類型
+    if (resource.type && resource.type.length > 0) {
+        const typeText = resource.type[0].text || getCodingDisplay(resource.type[0].coding) || "-";
+        rows.push(`<div class="summary-row"><span>類型</span><span>${typeText}</span></div>`);
+    }
+    
+    // 聯絡電話
+    if (resource.telecom) {
+        const phone = resource.telecom.find(t => t.system === 'phone');
+        if (phone) {
+            rows.push(`<div class="summary-row"><span>電話</span><span>${phone.value}</span></div>`);
+        }
+        const email = resource.telecom.find(t => t.system === 'email');
+        if (email) {
+            rows.push(`<div class="summary-row"><span>Email</span><span>${email.value}</span></div>`);
+        }
+    }
+    
+    // 地址
+    if (resource.address && resource.address.length > 0) {
+        const addr = resource.address[0];
+        const addressText = [addr.line, addr.city, addr.state, addr.postalCode, addr.country].filter(Boolean).join(', ');
+        if (addressText) {
+            rows.push(`<div class="summary-row"><span>地址</span><span>${addressText}</span></div>`);
+        }
+    }
+}
+
+function buildPractitionerSummary(resource, rows) {
+    // 醫護人員姓名
+    if (resource.name && resource.name.length > 0) {
+        const name = formatHumanName(resource.name[0]);
+        rows.push(`<div class="summary-row"><span>姓名</span><span><strong>${name}</strong></span></div>`);
+    }
+    
+    // 性別
+    if (resource.gender) {
+        const genderMap = { male: "男", female: "女", other: "其他", unknown: "未知" };
+        rows.push(`<div class="summary-row"><span>性別</span><span>${genderMap[resource.gender] || resource.gender}</span></div>`);
+    }
+    
+    // 資格
+    if (resource.qualification && resource.qualification.length > 0) {
+        resource.qualification.forEach((qual, index) => {
+            const qualText = qual.code?.text || getCodingDisplay(qual.code?.coding) || "-";
+            rows.push(`<div class="summary-row"><span>資格 ${index + 1}</span><span>${qualText}</span></div>`);
+        });
+    }
+    
+    // 聯絡電話
+    if (resource.telecom) {
+        const phone = resource.telecom.find(t => t.system === 'phone');
+        if (phone) {
+            rows.push(`<div class="summary-row"><span>電話</span><span>${phone.value}</span></div>`);
+        }
+        const email = resource.telecom.find(t => t.system === 'email');
+        if (email) {
+            rows.push(`<div class="summary-row"><span>Email</span><span>${email.value}</span></div>`);
+        }
+    }
+}
+
 function buildGenericSummary(resource, rows) {
     // 狀態
     if (resource.status) {

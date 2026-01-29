@@ -2376,4 +2376,8 @@ pre {
     background: #f8fafc;
     border: none;
     border-radius: 0;
+    color: #1e293b;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
 }
