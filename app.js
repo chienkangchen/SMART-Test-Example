@@ -1318,8 +1318,36 @@ async function renderDetail(nodeId, connectedNodeIds) {
         const chineseLabel = RESOURCE_LABELS["Patient"] || "Patient";
         detailCard.innerHTML = `
             <h3>${chineseLabel}</h3>
-            <pre>${escapeHtml(JSON.stringify(resource, null, 2))}</pre>
+            <div class="json-collapsible">
+                <div class="json-header" tabindex="0" role="button" aria-expanded="false" aria-controls="json-content-patient">
+                    <span>JSON 詳情</span>
+                    <span class="collapse-icon">▼</span>
+                </div>
+                <div id="json-content-patient" class="json-content collapsed">
+                    <pre>${escapeHtml(JSON.stringify(resource, null, 2))}</pre>
+                </div>
+            </div>
         `;
+        
+        // 添加折疊功能
+        const jsonHeader = detailCard.querySelector('.json-header');
+        const jsonContent = detailCard.querySelector('.json-content');
+        const collapseIcon = detailCard.querySelector('.collapse-icon');
+        
+        const toggleJson = () => {
+            const isCollapsed = jsonContent.classList.toggle('collapsed');
+            collapseIcon.classList.toggle('collapsed');
+            jsonHeader.setAttribute('aria-expanded', !isCollapsed);
+        };
+        
+        jsonHeader.addEventListener('click', toggleJson);
+        jsonHeader.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleJson();
+            }
+        });
+        
         return;
     }
 
@@ -1414,9 +1442,37 @@ async function renderDetail(nodeId, connectedNodeIds) {
         <h3>${title}</h3>
         <div class="detail-summary">${summary}</div>
         ${relatedHtml}
-        <h4>JSON 詳情</h4>
-        <pre>${escapeHtml(JSON.stringify(resource, null, 2))}</pre>
+        <div class="json-collapsible">
+            <div class="json-header" tabindex="0" role="button" aria-expanded="false" aria-controls="json-content-resource">
+                <span>JSON 詳情</span>
+                <span class="collapse-icon">▼</span>
+            </div>
+            <div id="json-content-resource" class="json-content collapsed">
+                <pre>${escapeHtml(JSON.stringify(resource, null, 2))}</pre>
+            </div>
+        </div>
     `;
+    
+    // 添加 JSON 折疊功能
+    const jsonHeader = detailCard.querySelector('.json-header');
+    const jsonContent = detailCard.querySelector('.json-content');
+    const collapseIcon = detailCard.querySelector('.collapse-icon');
+    
+    if (jsonHeader && jsonContent && collapseIcon) {
+        const toggleJson = () => {
+            const isCollapsed = jsonContent.classList.toggle('collapsed');
+            collapseIcon.classList.toggle('collapsed');
+            jsonHeader.setAttribute('aria-expanded', !isCollapsed);
+        };
+        
+        jsonHeader.addEventListener('click', toggleJson);
+        jsonHeader.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleJson();
+            }
+        });
+    }
     
     // 為資源卡片添加點擊事件
     detailCard.querySelectorAll('.resource-card').forEach((card) => {
@@ -1665,6 +1721,10 @@ function getResourceCardTitle(resource) {
             return resource.vaccineCode?.text || getCodingDisplay(resource.vaccineCode?.coding) || "疫苗";
         case "AllergyIntolerance":
             return resource.code?.text || getCodingDisplay(resource.code?.coding) || "過敏";
+        case "Organization":
+            return resource.name || "組織";
+        case "Practitioner":
+            return formatHumanName(resource.name?.[0]) || "醫護人員";
         default:
             return resource.id || resType;
     }
@@ -1741,6 +1801,39 @@ function buildResourceCardFields(resource) {
             }
             if (resource.birthDate) {
                 fields.push(`<div class="resource-field"><span>出生:</span> ${resource.birthDate}</div>`);
+            }
+            break;
+            
+        case "Organization":
+            if (resource.name) {
+                fields.push(`<div class="resource-field"><span>名稱:</span> <strong>${resource.name}</strong></div>`);
+            }
+            if (resource.type?.[0]) {
+                const orgType = resource.type[0].text || getCodingDisplay(resource.type[0].coding);
+                fields.push(`<div class="resource-field"><span>類型:</span> ${orgType}</div>`);
+            }
+            if (resource.telecom) {
+                const phone = resource.telecom.find(t => t.system === 'phone');
+                if (phone) {
+                    fields.push(`<div class="resource-field"><span>電話:</span> ${phone.value}</div>`);
+                }
+            }
+            break;
+            
+        case "Practitioner":
+            if (resource.name?.[0]) {
+                const name = formatHumanName(resource.name[0]);
+                fields.push(`<div class="resource-field"><span>姓名:</span> <strong>${name}</strong></div>`);
+            }
+            if (resource.qualification?.[0]) {
+                const qualification = resource.qualification[0].code?.text || getCodingDisplay(resource.qualification[0].code?.coding);
+                fields.push(`<div class="resource-field"><span>資格:</span> ${qualification}</div>`);
+            }
+            if (resource.telecom) {
+                const phone = resource.telecom.find(t => t.system === 'phone');
+                if (phone) {
+                    fields.push(`<div class="resource-field"><span>電話:</span> ${phone.value}</div>`);
+                }
             }
             break;
             
