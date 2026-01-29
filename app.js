@@ -1438,11 +1438,7 @@ async function renderDetail(nodeId, connectedNodeIds) {
     detailCard.querySelectorAll('.resource-group-content').forEach((content) => {
         content.style.maxHeight = content.scrollHeight + 'px';
     });
-                    console.error("renderDetail 失敗:", err);
-                });
-            }
-        });
-    });
+}
 }
 
 function buildResourceSummary(resource) {
