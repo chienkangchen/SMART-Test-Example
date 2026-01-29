@@ -229,6 +229,7 @@ let nodes = null;
 let edges = null;
 let nodeMeta = new Map();
 let resourceMap = new Map();
+let selectedNodeId = null; // 追蹤目前選中的節點
 
 const graphContainer = document.getElementById("graph");
 const graphLoading = document.getElementById("graph-loading");
@@ -635,6 +636,64 @@ function renderFilters() {
     updateVisibility();
 }
 
+/**
+ * 當節點被選中時，更新篩選器以只顯示該節點及其連接節點的資源類型
+ * @param {string} nodeId - 選中的節點ID
+ * @param {Set} connectedNodeIds - 與該節點相連的所有節點ID
+ */
+function updateFiltersForNode(nodeId, connectedNodeIds) {
+    if (!filterList) {
+        return;
+    }
+    
+    // 收集連接節點中的所有資源類型
+    const relatedResourceTypes = new Set();
+    
+    connectedNodeIds.forEach((id) => {
+        // 從節點ID中提取資源類型（格式: "ResourceType/id"）
+        const resourceType = id.split("/")[0];
+        if (resourceType) {
+            relatedResourceTypes.add(resourceType);
+        }
+    });
+    
+    // 添加病人資源類型
+    relatedResourceTypes.add("Patient");
+    
+    // 更新複選框狀態
+    filterList.querySelectorAll("input[type=checkbox]").forEach((checkbox) => {
+        const type = checkbox.dataset.type;
+        const shouldCheck = relatedResourceTypes.has(type);
+        checkbox.checked = shouldCheck;
+        
+        // 禁用與該節點無關的複選框
+        checkbox.disabled = !shouldCheck;
+    });
+    
+    // 應用新的可見性設定
+    updateVisibility();
+}
+
+/**
+ * 恢復完整的篩選器（取消節點篩選狀態）
+ */
+function restoreFullFilters() {
+    if (!filterList) {
+        return;
+    }
+    
+    // 恢復原始狀態：常用資源預設勾選，其他不勾選
+    filterList.querySelectorAll("input[type=checkbox]").forEach((checkbox) => {
+        const type = checkbox.dataset.type;
+        const isCommon = COMMON_RESOURCES.has(type);
+        checkbox.checked = isCommon;
+        checkbox.disabled = false; // 啟用所有複選框
+    });
+    
+    // 應用原始的可見性設定
+    updateVisibility();
+}
+
 let expandedNodes = new Set();
 
 function buildGraph() {
@@ -739,6 +798,8 @@ function buildGraph() {
     network.on("selectNode", (params) => {
         const nodeId = params.nodes && params.nodes[0];
         if (nodeId) {
+            selectedNodeId = nodeId; // 記錄選中的節點
+            
             // 先展開節點的 references（如果還未展開）
             if (!expandedNodes.has(nodeId)) {
                 expandNode(nodeId);
@@ -773,6 +834,9 @@ function buildGraph() {
                 }
             });
             
+            // 更新篩選器以只顯示該節點相關的資源類型
+            updateFiltersForNode(nodeId, connectedNodeIds);
+            
             renderDetail(nodeId, connectedNodeIds).catch((err) => {
                 console.error("renderDetail 失敗:", err);
             });
@@ -780,6 +844,8 @@ function buildGraph() {
     });
 
     network.on("deselectNode", () => {
+        selectedNodeId = null; // 清除選中節點的記錄
+        
         // 顯示所有節點和邊
         nodes.forEach((node) => {
             nodes.update({ id: node.id, hidden: false });
@@ -787,6 +853,9 @@ function buildGraph() {
         edges.forEach((edge) => {
             edges.update({ id: edge.id, hidden: false });
         });
+        
+        // 恢復完整的篩選器
+        restoreFullFilters();
         
         detailCard.innerHTML = `
             <div class="empty-state">
