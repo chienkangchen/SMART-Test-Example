@@ -259,17 +259,51 @@ reloadBtn.addEventListener("click", () => initializeApp(true));
 fitBtn.addEventListener("click", () => network && network.fit({ animation: true }));
 nodeSearch.addEventListener("keyup", handleSearch);
 
-// 資源篩選收合功能
+// 資源篩選收合功能（支援鍵盤導航）
 const filterCollapseHeader = document.querySelector(".collapsible-header");
 const filterCollapseIcon = document.getElementById("filter-collapse-icon");
 const filterListContent = document.getElementById("filter-list");
 
 if (filterCollapseHeader && filterCollapseIcon && filterListContent) {
-    filterCollapseHeader.addEventListener("click", () => {
-        filterListContent.classList.toggle("collapsed");
+    const toggleFilter = () => {
+        const isCollapsed = filterListContent.classList.toggle("collapsed");
         filterCollapseIcon.classList.toggle("collapsed");
+        // 更新 ARIA 狀態
+        filterCollapseHeader.setAttribute("aria-expanded", !isCollapsed);
+    };
+    
+    filterCollapseHeader.addEventListener("click", toggleFilter);
+    
+    // 鍵盤支援（Enter 或 Space 鍵）
+    filterCollapseHeader.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleFilter();
+        }
     });
 }
+
+// 鍵盤導航提示
+document.addEventListener("DOMContentLoaded", () => {
+    // 為圖表區域添加鍵盤提示
+    const graphCanvas = document.getElementById("graph");
+    if (graphCanvas) {
+        graphCanvas.addEventListener("focus", () => {
+            const hint = document.createElement("div");
+            hint.className = "keyboard-hint";
+            hint.setAttribute("role", "status");
+            hint.setAttribute("aria-live", "polite");
+            hint.textContent = "使用方向鍵移動、Enter 鍵選擇節點、Tab 鍵切換焦點";
+            graphCanvas.appendChild(hint);
+            
+            setTimeout(() => {
+                if (hint.parentNode) {
+                    hint.remove();
+                }
+            }, 3000);
+        });
+    }
+});
 
 if (typeof FHIR !== "undefined" && FHIR.oauth2) {
     FHIR.oauth2.ready()
@@ -320,6 +354,9 @@ async function initializeApp(forceReload) {
         renderStats();
         renderFilters();
         buildGraph();
+        
+        // 顯示初始的資源列表
+        renderInitialResourceList();
     } catch (error) {
         showError("載入資料時發生錯誤", error);
     } finally {
@@ -1505,7 +1542,8 @@ function buildGroupedRelatedResources(currentNodeId, connectedNodeIds) {
     };
     
     connectedNodeIds.forEach((id) => {
-        if (id !== currentNodeId) {
+        // 如果沒有 currentNodeId（初始列表），包含所有資源；否則排除當前節點
+        if (!currentNodeId || id !== currentNodeId) {
             const [resType, resId] = id.split("/");
             const resource = resourceMap.get(id);
             
@@ -1525,6 +1563,17 @@ function buildGroupedRelatedResources(currentNodeId, connectedNodeIds) {
     const groups = [];
     Object.keys(groupedResources).sort().forEach((resType) => {
         const items = groupedResources[resType];
+        
+        // 按日期排序（從近到遠）
+        items.sort((a, b) => {
+            const dateA = getResourceDate(a.resource);
+            const dateB = getResourceDate(b.resource);
+            if (!dateA && !dateB) return 0;
+            if (!dateA) return 1;
+            if (!dateB) return -1;
+            return new Date(dateB) - new Date(dateA);
+        });
+        
         const chineseLabel = RESOURCE_LABELS[resType] || resType;
         const icon = resourceIcons[resType] || "📎";
         const color = TYPE_COLORS[resType] || TYPE_COLORS.Unknown;
@@ -1717,6 +1766,94 @@ function toggleResourceGroup(headerElement) {
         content.style.maxHeight = content.scrollHeight + 'px';
         icon.style.transform = 'rotate(180deg)';
     }
+}
+
+// 獲取資源的日期（用於排序）
+function getResourceDate(resource) {
+    if (!resource) return null;
+    
+    // 根據不同資源類型返回相應的日期欄位
+    const resType = resource.resourceType;
+    
+    switch (resType) {
+        case "Observation":
+            return resource.effectiveDateTime || resource.effectivePeriod?.start || resource.issued;
+        case "Condition":
+            return resource.onsetDateTime || resource.recordedDate || resource.assertedDate;
+        case "Procedure":
+            return resource.performedDateTime || resource.performedPeriod?.start;
+        case "Encounter":
+            return resource.period?.start;
+        case "MedicationStatement":
+        case "MedicationRequest":
+            return resource.effectiveDateTime || resource.effectivePeriod?.start || resource.authoredOn;
+        case "DiagnosticReport":
+            return resource.effectiveDateTime || resource.issued;
+        case "Immunization":
+            return resource.occurrenceDateTime;
+        case "AllergyIntolerance":
+            return resource.recordedDate || resource.onsetDateTime;
+        case "Claim":
+        case "ExplanationOfBenefit":
+            return resource.created;
+        default:
+            return resource.date || resource.authoredOn || resource.recordedDate || resource.effectiveDateTime;
+    }
+}
+
+// 顯示初始的所有資源列表
+function renderInitialResourceList() {
+    if (!detailCard || !patientResource) {
+        return;
+    }
+    
+    // 收集所有資源
+    const allResourceIds = new Set();
+    const patientNodeId = `Patient/${patientResource.id}`;
+    allResourceIds.add(patientNodeId);
+    
+    // 添加所有已載入的資源
+    RESOURCE_TYPES.forEach((type) => {
+        const resources = resourcesByType[type] || [];
+        resources.forEach((resource) => {
+            const nodeId = `${resource.resourceType}/${resource.id}`;
+            allResourceIds.add(nodeId);
+        });
+    });
+    
+    // 使用分組顯示函數
+    const relatedHtml = buildGroupedRelatedResources(null, allResourceIds);
+    
+    detailCard.innerHTML = `
+        <h3>📊 所有資源總覽</h3>
+        <div class="detail-summary">
+            <div class="summary-row"><span>病人</span><span>${formatHumanName(patientResource.name?.[0])}</span></div>
+            <div class="summary-row"><span>資源總數</span><span>${allResourceIds.size - 1} 項</span></div>
+        </div>
+        ${relatedHtml}
+    `;
+    
+    // 為資源卡片添加點擊事件
+    detailCard.querySelectorAll('.resource-card').forEach((card) => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.resource-group-header')) {
+                return;
+            }
+            
+            const targetNodeId = card.getAttribute('data-node-id');
+            if (targetNodeId && network) {
+                detailCard.querySelectorAll('.resource-card').forEach(el => el.classList.remove('active'));
+                card.classList.add('active');
+                network.selectNodes([targetNodeId]);
+                network.focus(targetNodeId, { scale: 1.2, animation: true });
+            }
+        });
+    });
+    
+    // 初始化資源分組的展開狀態（預設全部展開）
+    detailCard.querySelectorAll('.resource-group-content').forEach((content) => {
+        content.style.maxHeight = content.scrollHeight + 'px';
+    });
 }
 
 // Observation 專用摘要
