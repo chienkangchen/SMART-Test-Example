@@ -1433,7 +1433,7 @@ async function renderDetail(nodeId, connectedNodeIds) {
     // 構建關聯資源列表（分組顯示）
     let relatedHtml = "";
     if (connectedNodeIds && connectedNodeIds.size > 1) {
-        relatedHtml = buildGroupedRelatedResources(nodeId, connectedNodeIds);
+        relatedHtml = await buildGroupedRelatedResources(nodeId, connectedNodeIds);
     }
 
     detailCard.innerHTML = `
@@ -1581,7 +1581,7 @@ function buildResourceSummary(resource) {
 }
 
 // 建構分組的關聯資源顯示
-function buildGroupedRelatedResources(currentNodeId, connectedNodeIds) {
+async function buildGroupedRelatedResources(currentNodeId, connectedNodeIds) {
     // 按資源類型分組
     const groupedResources = {};
     const resourceIcons = {
@@ -1601,11 +1601,19 @@ function buildGroupedRelatedResources(currentNodeId, connectedNodeIds) {
         "ExplanationOfBenefit": "📄"
     };
     
+    // 收集需要載入的資源
+    const resourcesToLoad = [];
+    
     connectedNodeIds.forEach((id) => {
         // 如果沒有 currentNodeId（初始列表），包含所有資源；否則排除當前節點
         if (!currentNodeId || id !== currentNodeId) {
             const [resType, resId] = id.split("/");
             const resource = resourceMap.get(id);
+            
+            // 如果資源未載入，加入載入列表
+            if (!resource && client && resType && resId) {
+                resourcesToLoad.push({ id, resType, resId });
+            }
             
             if (!groupedResources[resType]) {
                 groupedResources[resType] = [];
@@ -1618,6 +1626,33 @@ function buildGroupedRelatedResources(currentNodeId, connectedNodeIds) {
             });
         }
     });
+    
+    // 批量載入缺失的資源
+    if (resourcesToLoad.length > 0) {
+        await Promise.allSettled(
+            resourcesToLoad.map(async ({ id, resType, resId }) => {
+                try {
+                    const loadedResource = await requestAll(`${resType}/${resId}`);
+                    if (loadedResource) {
+                        const resource = Array.isArray(loadedResource) ? loadedResource[0] : loadedResource;
+                        if (resource && resource.resourceType) {
+                            resourceMap.set(id, resource);
+                            // 更新對應的分組資源
+                            const groupItems = groupedResources[resType];
+                            if (groupItems) {
+                                const item = groupItems.find(i => i.id === id);
+                                if (item) {
+                                    item.resource = resource;
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`無法載入資源 ${id}:`, error.message);
+                }
+            })
+        );
+    }
     
     // 建構 HTML
     const groups = [];
@@ -1919,7 +1954,7 @@ function renderInitialResourceList() {
     });
     
     // 使用分組顯示函數
-    const relatedHtml = buildGroupedRelatedResources(null, allResourceIds);
+    const relatedHtml = await buildGroupedRelatedResources(null, allResourceIds);
     
     detailCard.innerHTML = `
         <h3>📊 所有資源總覽</h3>
