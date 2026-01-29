@@ -2042,3 +2042,151 @@ pre {
         page-break-inside: avoid;
     }
 }
+
+/* ==========================================
+   資源分組顯示樣式
+   ========================================== */
+
+.related-section-new {
+    margin-top: 20px;
+}
+
+.related-section-new h4 {
+    color: #1e293b;
+    font-size: 1rem;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.resource-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.resource-group {
+    background: #f8fafc;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.resource-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.resource-group-header:hover {
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+}
+
+.group-icon {
+    font-size: 1.2rem;
+}
+
+.group-title {
+    font-weight: 600;
+    color: #1e293b;
+    flex: 1;
+}
+
+.group-count {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.group-toggle {
+    color: #64748b;
+    transition: transform 0.3s ease;
+}
+
+.resource-group-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 12px;
+}
+
+.resource-card {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 8px 0;
+}
+
+.resource-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+    transform: translateX(2px);
+}
+
+.resource-card.active {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 2px 12px rgba(59, 130, 246, 0.2);
+}
+
+.resource-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 8px;
+}
+
+.resource-card-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.resource-card-id {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-family: 'Courier New', monospace;
+}
+
+.resource-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.resource-field {
+    font-size: 0.9rem;
+    color: #475569;
+    display: flex;
+    gap: 4px;
+}
+
+.resource-field span {
+    color: #64748b;
+    min-width: 60px;
+}
+
+.resource-field strong {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+/* 收合圖標樣式 */
+.collapse-icon.collapsed {
+    transform: rotate(180deg);
+}

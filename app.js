@@ -1367,46 +1367,10 @@ async function renderDetail(nodeId, connectedNodeIds) {
     const title = `${chineseLabel}`;
     const summary = buildResourceSummary(resource);
     
-    // 構建關聯資源列表
+    // 構建關聯資源列表（分組顯示）
     let relatedHtml = "";
     if (connectedNodeIds && connectedNodeIds.size > 1) {
-        const relatedItems = [];
-        connectedNodeIds.forEach((id) => {
-            if (id !== nodeId) {
-                const relatedResource = resourceMap.get(id);
-                const [resType, resId] = id.split("/");
-                
-                if (relatedResource) {
-                    const display = getResourceDisplay(relatedResource);
-                    const relatedChineseLabel = RESOURCE_LABELS[relatedResource.resourceType] || relatedResource.resourceType;
-                    relatedItems.push(`
-                        <div class="related-item" data-node-id="${id}">
-                            <div class="related-type" style="color: ${TYPE_COLORS[relatedResource.resourceType] || TYPE_COLORS.Unknown};">
-                                ${relatedChineseLabel}
-                            </div>
-                            <div class="related-text">${display || relatedResource.id}</div>
-                        </div>
-                    `);
-                } else {
-                    // 沒有載入資源詳情，只顯示 reference
-                    const unknownChineseLabel = RESOURCE_LABELS[resType] || resType || "Unknown";
-                    relatedItems.push(`
-                        <div class="related-item" data-node-id="${id}">
-                            <div class="related-type" style="color: ${TYPE_COLORS[resType] || TYPE_COLORS.Unknown};">
-                                ${unknownChineseLabel}
-                            </div>
-                            <div class="related-text">${resId || id}</div>
-                        </div>
-                    `);
-                }
-            }
-        });
-        relatedHtml = `
-            <div class="related-section">
-                <h4><i class="fas fa-link"></i> 關聯資源 (${relatedItems.length})</h4>
-                <div class="related-list">${relatedItems.join("")}</div>
-            </div>
-        `;
+        relatedHtml = buildGroupedRelatedResources(nodeId, connectedNodeIds);
     }
 
     detailCard.innerHTML = `
@@ -1417,15 +1381,20 @@ async function renderDetail(nodeId, connectedNodeIds) {
         <pre>${escapeHtml(JSON.stringify(resource, null, 2))}</pre>
     `;
     
-    // 為關聯資源項目添加點擊事件
-    detailCard.querySelectorAll('.related-item').forEach((item) => {
-        item.addEventListener('click', () => {
-            const targetNodeId = item.getAttribute('data-node-id');
+    // 為資源卡片添加點擊事件
+    detailCard.querySelectorAll('.resource-card').forEach((card) => {
+        card.addEventListener('click', (e) => {
+            // 如果點擊的是展開/收合按鈕，不執行跳轉
+            if (e.target.closest('.resource-group-header')) {
+                return;
+            }
+            
+            const targetNodeId = card.getAttribute('data-node-id');
             if (targetNodeId && network) {
                 // 移除所有 active 狀態
-                detailCard.querySelectorAll('.related-item').forEach(el => el.classList.remove('active'));
+                detailCard.querySelectorAll('.resource-card').forEach(el => el.classList.remove('active'));
                 // 添加當前項目的 active 狀態
-                item.classList.add('active');
+                card.classList.add('active');
                 
                 // 直接聚焦到節點，但不觸發選中效果
                 network.focus(targetNodeId, { scale: 1.2, animation: true });
@@ -1459,6 +1428,16 @@ async function renderDetail(nodeId, connectedNodeIds) {
                 });
                 
                 renderDetail(targetNodeId, connectedNodeIds).catch((err) => {
+                    console.error("renderDetail 失敗:", err);
+                });
+            }
+        });
+    });
+    
+    // 初始化資源分組的展開狀態（預設全部展開）
+    detailCard.querySelectorAll('.resource-group-content').forEach((content) => {
+        content.style.maxHeight = content.scrollHeight + 'px';
+    });
                     console.error("renderDetail 失敗:", err);
                 });
             }
@@ -1506,6 +1485,242 @@ function buildResourceSummary(resource) {
     }
 
     return rows.join("");
+}
+
+// 建構分組的關聯資源顯示
+function buildGroupedRelatedResources(currentNodeId, connectedNodeIds) {
+    // 按資源類型分組
+    const groupedResources = {};
+    const resourceIcons = {
+        "Observation": "🔬",
+        "Condition": "🏥",
+        "Procedure": "⚕️",
+        "MedicationStatement": "💊",
+        "MedicationRequest": "💊",
+        "Patient": "👤",
+        "Practitioner": "👨‍⚕️",
+        "Organization": "🏢",
+        "Encounter": "📋",
+        "DiagnosticReport": "📊",
+        "Immunization": "💉",
+        "AllergyIntolerance": "⚠️",
+        "Claim": "💰",
+        "ExplanationOfBenefit": "📄"
+    };
+    
+    connectedNodeIds.forEach((id) => {
+        if (id !== currentNodeId) {
+            const [resType, resId] = id.split("/");
+            const resource = resourceMap.get(id);
+            
+            if (!groupedResources[resType]) {
+                groupedResources[resType] = [];
+            }
+            
+            groupedResources[resType].push({
+                id,
+                resId,
+                resource
+            });
+        }
+    });
+    
+    // 建構 HTML
+    const groups = [];
+    Object.keys(groupedResources).sort().forEach((resType) => {
+        const items = groupedResources[resType];
+        const chineseLabel = RESOURCE_LABELS[resType] || resType;
+        const icon = resourceIcons[resType] || "📎";
+        const color = TYPE_COLORS[resType] || TYPE_COLORS.Unknown;
+        
+        // 建構該類型的資源卡片
+        const resourceCards = items.map((item) => {
+            return buildResourceCard(item.resource, item.resId, item.id, resType, color);
+        }).join("");
+        
+        groups.push(`
+            <div class="resource-group">
+                <div class="resource-group-header" onclick="toggleResourceGroup(this)">
+                    <span class="group-icon">${icon}</span>
+                    <span class="group-title">${chineseLabel}</span>
+                    <span class="group-count">(${items.length} 項)</span>
+                    <i class="fas fa-chevron-down group-toggle"></i>
+                </div>
+                <div class="resource-group-content">
+                    ${resourceCards}
+                </div>
+            </div>
+        `);
+    });
+    
+    return `
+        <div class="related-section-new">
+            <h4><i class="fas fa-link"></i> 關聯資源詳情</h4>
+            <div class="resource-groups">
+                ${groups.join("")}
+            </div>
+        </div>
+    `;
+}
+
+// 建構單個資源卡片
+function buildResourceCard(resource, resId, nodeId, resType, color) {
+    if (!resource) {
+        // 未載入的資源，只顯示 ID
+        return `
+            <div class="resource-card" data-node-id="${nodeId}">
+                <div class="resource-card-header">
+                    <span class="resource-card-title" style="color: ${color};">${resId || nodeId}</span>
+                </div>
+                <div class="resource-card-body">
+                    <div class="resource-field">未載入詳細資料</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 根據資源類型建構簡要資訊
+    const fields = buildResourceCardFields(resource);
+    const title = getResourceCardTitle(resource);
+    
+    return `
+        <div class="resource-card" data-node-id="${nodeId}">
+            <div class="resource-card-header">
+                <span class="resource-card-title" style="color: ${color};">${title}</span>
+                <span class="resource-card-id">#${resource.id}</span>
+            </div>
+            <div class="resource-card-body">
+                ${fields}
+            </div>
+        </div>
+    `;
+}
+
+// 取得資源卡片標題
+function getResourceCardTitle(resource) {
+    const resType = resource.resourceType;
+    
+    switch (resType) {
+        case "Observation":
+            return resource.code?.text || getCodingDisplay(resource.code?.coding) || "觀察結果";
+        case "Condition":
+            return resource.code?.text || getCodingDisplay(resource.code?.coding) || "診斷";
+        case "Procedure":
+            return resource.code?.text || getCodingDisplay(resource.code?.coding) || "處置";
+        case "MedicationStatement":
+        case "MedicationRequest":
+            return resource.medicationCodeableConcept?.text || getCodingDisplay(resource.medicationCodeableConcept?.coding) || "藥物";
+        case "Encounter":
+            return resource.type?.[0]?.text || getCodingDisplay(resource.type?.[0]?.coding) || "就醫";
+        case "Patient":
+            return formatHumanName(resource.name?.[0]) || "病人";
+        case "DiagnosticReport":
+            return resource.code?.text || getCodingDisplay(resource.code?.coding) || "診斷報告";
+        case "Immunization":
+            return resource.vaccineCode?.text || getCodingDisplay(resource.vaccineCode?.coding) || "疫苗";
+        case "AllergyIntolerance":
+            return resource.code?.text || getCodingDisplay(resource.code?.coding) || "過敏";
+        default:
+            return resource.id || resType;
+    }
+}
+
+// 建構資源卡片欄位
+function buildResourceCardFields(resource) {
+    const fields = [];
+    const resType = resource.resourceType;
+    
+    switch (resType) {
+        case "Observation":
+            if (resource.valueQuantity) {
+                fields.push(`<div class="resource-field"><span>測量值:</span> <strong>${resource.valueQuantity.value} ${resource.valueQuantity.unit || ""}</strong></div>`);
+            } else if (resource.valueString) {
+                fields.push(`<div class="resource-field"><span>測量值:</span> <strong>${resource.valueString}</strong></div>`);
+            }
+            if (resource.effectiveDateTime) {
+                fields.push(`<div class="resource-field"><span>時間:</span> ${formatDate(resource.effectiveDateTime)}</div>`);
+            }
+            break;
+            
+        case "Condition":
+            if (resource.clinicalStatus) {
+                const status = resource.clinicalStatus.coding?.[0]?.display || resource.clinicalStatus.coding?.[0]?.code;
+                fields.push(`<div class="resource-field"><span>狀態:</span> ${status}</div>`);
+            }
+            if (resource.severity) {
+                fields.push(`<div class="resource-field"><span>嚴重程度:</span> ${resource.severity.text || getCodingDisplay(resource.severity.coding)}</div>`);
+            }
+            if (resource.onsetDateTime) {
+                fields.push(`<div class="resource-field"><span>發病:</span> ${formatDate(resource.onsetDateTime)}</div>`);
+            }
+            break;
+            
+        case "Procedure":
+            if (resource.status) {
+                fields.push(`<div class="resource-field"><span>狀態:</span> ${resource.status}</div>`);
+            }
+            if (resource.performedDateTime) {
+                fields.push(`<div class="resource-field"><span>執行:</span> ${formatDate(resource.performedDateTime)}</div>`);
+            }
+            break;
+            
+        case "MedicationStatement":
+        case "MedicationRequest":
+            if (resource.dosage?.[0]?.text) {
+                fields.push(`<div class="resource-field"><span>劑量:</span> ${resource.dosage[0].text}</div>`);
+            }
+            if (resource.effectivePeriod) {
+                const start = formatDate(resource.effectivePeriod.start);
+                const end = formatDate(resource.effectivePeriod.end);
+                fields.push(`<div class="resource-field"><span>期間:</span> ${start} ~ ${end}</div>`);
+            }
+            break;
+            
+        case "Encounter":
+            if (resource.status) {
+                fields.push(`<div class="resource-field"><span>狀態:</span> ${resource.status}</div>`);
+            }
+            if (resource.period) {
+                const start = formatDate(resource.period.start);
+                fields.push(`<div class="resource-field"><span>時間:</span> ${start}</div>`);
+            }
+            if (resource.class) {
+                fields.push(`<div class="resource-field"><span>分類:</span> ${resource.class.display || resource.class.code}</div>`);
+            }
+            break;
+            
+        case "Patient":
+            if (resource.gender) {
+                const genderMap = { male: "男", female: "女", other: "其他", unknown: "未知" };
+                fields.push(`<div class="resource-field"><span>性別:</span> ${genderMap[resource.gender] || resource.gender}</div>`);
+            }
+            if (resource.birthDate) {
+                fields.push(`<div class="resource-field"><span>出生:</span> ${resource.birthDate}</div>`);
+            }
+            break;
+            
+        default:
+            if (resource.status) {
+                fields.push(`<div class="resource-field"><span>狀態:</span> ${resource.status}</div>`);
+            }
+            break;
+    }
+    
+    return fields.length > 0 ? fields.join("") : '<div class="resource-field">無額外資訊</div>';
+}
+
+// 切換資源分組的展開/收合
+function toggleResourceGroup(headerElement) {
+    const content = headerElement.nextElementSibling;
+    const icon = headerElement.querySelector('.group-toggle');
+    
+    if (content.style.maxHeight) {
+        content.style.maxHeight = null;
+        icon.style.transform = 'rotate(0deg)';
+    } else {
+        content.style.maxHeight = content.scrollHeight + 'px';
+        icon.style.transform = 'rotate(180deg)';
+    }
 }
 
 // Observation 專用摘要
