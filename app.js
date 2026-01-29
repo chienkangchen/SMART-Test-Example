@@ -942,8 +942,9 @@ function renderFallbackGraph(message) {
     items.forEach((item) => {
         const card = document.createElement("div");
         card.className = "fallback-card";
+        const chineseLabel = RESOURCE_LABELS[item.type] || item.type;
         card.innerHTML = `
-            <div class="fallback-type" style="color: ${TYPE_COLORS[item.type] || TYPE_COLORS.Unknown};">${item.type}</div>
+            <div class="fallback-type" style="color: ${TYPE_COLORS[item.type] || TYPE_COLORS.Unknown};">${chineseLabel}</div>
             <div class="fallback-label">${item.label || "(無標題)"}</div>
             <div class="fallback-id">${item.id || "-"}</div>
         `;
@@ -1272,8 +1273,9 @@ async function renderDetail(nodeId, connectedNodeIds) {
     let resource = resourceMap.get(nodeId);
 
     if (resource && resource.resourceType === "Patient") {
+        const chineseLabel = RESOURCE_LABELS["Patient"] || "Patient";
         detailCard.innerHTML = `
-            <h3>Patient</h3>
+            <h3>${chineseLabel}</h3>
             <pre>${escapeHtml(JSON.stringify(resource, null, 2))}</pre>
         `;
         return;
@@ -1356,7 +1358,8 @@ async function renderDetail(nodeId, connectedNodeIds) {
         }
     }
 
-    const title = `${resource.resourceType}`;
+    const chineseLabel = RESOURCE_LABELS[resource.resourceType] || resource.resourceType;
+    const title = `${chineseLabel}`;
     const summary = buildResourceSummary(resource);
     
     // 構建關聯資源列表
@@ -1370,20 +1373,22 @@ async function renderDetail(nodeId, connectedNodeIds) {
                 
                 if (relatedResource) {
                     const display = getResourceDisplay(relatedResource);
+                    const relatedChineseLabel = RESOURCE_LABELS[relatedResource.resourceType] || relatedResource.resourceType;
                     relatedItems.push(`
                         <div class="related-item" data-node-id="${id}">
                             <div class="related-type" style="color: ${TYPE_COLORS[relatedResource.resourceType] || TYPE_COLORS.Unknown};">
-                                ${relatedResource.resourceType}
+                                ${relatedChineseLabel}
                             </div>
                             <div class="related-text">${display || relatedResource.id}</div>
                         </div>
                     `);
                 } else {
                     // 沒有載入資源詳情，只顯示 reference
+                    const unknownChineseLabel = RESOURCE_LABELS[resType] || resType || "Unknown";
                     relatedItems.push(`
                         <div class="related-item" data-node-id="${id}">
                             <div class="related-type" style="color: ${TYPE_COLORS[resType] || TYPE_COLORS.Unknown};">
-                                ${resType || "Unknown"}
+                                ${unknownChineseLabel}
                             </div>
                             <div class="related-text">${resId || id}</div>
                         </div>
