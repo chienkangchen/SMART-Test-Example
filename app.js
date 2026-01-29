@@ -660,38 +660,78 @@ function updateFiltersForNode(nodeId, connectedNodeIds) {
     // 添加病人資源類型
     relatedResourceTypes.add("Patient");
     
-    // 更新複選框狀態
-    filterList.querySelectorAll("input[type=checkbox]").forEach((checkbox) => {
-        const type = checkbox.dataset.type;
-        const shouldCheck = relatedResourceTypes.has(type);
-        checkbox.checked = shouldCheck;
-        
-        // 禁用與該節點無關的複選框
-        checkbox.disabled = !shouldCheck;
-    });
+    // 清空篩選列表
+    filterList.innerHTML = "";
     
-    // 應用新的可見性設定
-    updateVisibility();
+    // 只顯示相關的資源類型
+    relatedResourceTypes.forEach((type) => {
+        const label = document.createElement("label");
+        label.className = "filter-item";
+        label.innerHTML = `
+            <input type="checkbox" data-type="${type}" checked />
+            <span class="filter-color" style="background: ${TYPE_COLORS[type] || TYPE_COLORS.Unknown}"></span>
+            <span class="filter-text">${RESOURCE_LABELS[type] || type} <span class="filter-type">${type}</span></span>
+        `;
+        label.querySelector("input[type=checkbox]").addEventListener("change", updateVisibilityForSelectedNode);
+        filterList.appendChild(label);
+    });
 }
 
 /**
  * 恢復完整的篩選器（取消節點篩選狀態）
  */
 function restoreFullFilters() {
-    if (!filterList) {
+    // 重新呼叫 renderFilters() 以恢復完整的篩選面板
+    renderFilters();
+}
+
+/**
+ * 當節點被選中時，更新該節點對應的篩選可見性
+ * 只影響已選中節點相關的資源可見性，不會改變節點隱藏狀態
+ */
+function updateVisibilityForSelectedNode() {
+    if (!selectedNodeId || !nodes || !edges) {
         return;
     }
     
-    // 恢復原始狀態：常用資源預設勾選，其他不勾選
+    // 獲取當前選中的資源類型
+    const selectedTypes = new Set();
     filterList.querySelectorAll("input[type=checkbox]").forEach((checkbox) => {
-        const type = checkbox.dataset.type;
-        const isCommon = COMMON_RESOURCES.has(type);
-        checkbox.checked = isCommon;
-        checkbox.disabled = false; // 啟用所有複選框
+        if (checkbox.checked) {
+            selectedTypes.add(checkbox.dataset.type);
+        }
     });
     
-    // 應用原始的可見性設定
-    updateVisibility();
+    // 找出與選中節點相連的節點
+    const connectedNodeIds = new Set([selectedNodeId]);
+    edges.forEach((edge) => {
+        if (edge.from === selectedNodeId) {
+            connectedNodeIds.add(edge.to);
+        }
+        if (edge.to === selectedNodeId) {
+            connectedNodeIds.add(edge.from);
+        }
+    });
+    
+    // 在連接的節點中隱藏未勾選的資源類型
+    connectedNodeIds.forEach((nodeId) => {
+        const meta = nodeMeta.get(nodeId);
+        const group = meta && meta.group ? meta.group : "Unknown";
+        const shouldShow = selectedTypes.has(group);
+        
+        const node = nodes.get(nodeId);
+        if (node) {
+            nodes.update({ id: nodeId, hidden: !shouldShow });
+        }
+    });
+    
+    // 更新邊的可見性
+    edges.forEach((edge) => {
+        const fromNode = nodes.get(edge.from);
+        const toNode = nodes.get(edge.to);
+        const hidden = (fromNode && fromNode.hidden) || (toNode && toNode.hidden);
+        edges.update({ id: edge.id, hidden });
+    });
 }
 
 let expandedNodes = new Set();
@@ -980,7 +1020,9 @@ function addNode(nodeId, resource, group, displayText, distance = 1) {
         return;
     }
 
-    const label = `${group}\n${displayText || nodeId}`;
+    // 使用中文標籤作為節點的第一行
+    const chineseLabel = RESOURCE_LABELS[group] || group;
+    const label = `${chineseLabel}\n${displayText || nodeId}`;
     try {
         nodes.add({
             id: nodeId,
