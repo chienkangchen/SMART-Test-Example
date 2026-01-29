@@ -2183,6 +2183,18 @@ pre {
     transform: translateX(2px);
 }
 
+.resource-card-unloaded {
+    cursor: pointer;
+    border-style: dashed;
+    opacity: 0.8;
+}
+
+.resource-card-unloaded:hover {
+    opacity: 1;
+    border-color: #3b82f6;
+    background: #f8fafc;
+}
+
 .resource-card.active {
     border-color: #3b82f6;
     background: #eff6ff;

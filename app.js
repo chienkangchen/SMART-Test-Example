@@ -313,11 +313,9 @@ if (typeof FHIR !== "undefined" && FHIR.oauth2) {
         })
         .catch((error) => {
             console.error("SMART on FHIR 初始化失敗:", error);
-            showError("SMART on FHIR 連線失敗", { message: "請點擊「載入範例」查看測試資料" });
         });
 } else {
     console.warn("非 SMART on FHIR 環境");
-    showError("非 SMART 環境", { message: "請點擊「載入範例」查看測試資料" });
 }
 
 async function initializeApp(forceReload) {
@@ -1667,14 +1665,14 @@ function buildGroupedRelatedResources(currentNodeId, connectedNodeIds) {
 // 建構單個資源卡片
 function buildResourceCard(resource, resId, nodeId, resType, color) {
     if (!resource) {
-        // 未載入的資源，只顯示 ID
+        // 未載入的資源，顯示 ID 和提示
         return `
-            <div class="resource-card" data-node-id="${nodeId}">
+            <div class="resource-card resource-card-unloaded" data-node-id="${nodeId}">
                 <div class="resource-card-header">
                     <span class="resource-card-title" style="color: ${color};">${resId || nodeId}</span>
                 </div>
                 <div class="resource-card-body">
-                    <div class="resource-field">未載入詳細資料</div>
+                    <div class="resource-field" style="color: #94a3b8; font-style: italic;">點擊載入詳細資料...</div>
                 </div>
             </div>
         `;
