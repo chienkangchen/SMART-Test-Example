@@ -1439,7 +1439,7 @@ async function renderDetail(nodeId, connectedNodeIds) {
         content.style.maxHeight = content.scrollHeight + 'px';
     });
 }
-}
+
 
 function buildResourceSummary(resource) {
     const rows = [];
