@@ -1468,33 +1468,370 @@ async function renderDetail(nodeId, connectedNodeIds) {
 
 function buildResourceSummary(resource) {
     const rows = [];
+    const resourceType = resource.resourceType;
+    
+    // 基本資訊：ID
     rows.push(`<div class="summary-row"><span>ID</span><span>${resource.id || "-"}</span></div>`);
 
+    // 根據不同資源類型顯示特定資訊
+    switch (resourceType) {
+        case "Observation":
+            buildObservationSummary(resource, rows);
+            break;
+        case "Condition":
+            buildConditionSummary(resource, rows);
+            break;
+        case "Procedure":
+            buildProcedureSummary(resource, rows);
+            break;
+        case "Encounter":
+            buildEncounterSummary(resource, rows);
+            break;
+        case "MedicationStatement":
+        case "MedicationRequest":
+            buildMedicationSummary(resource, rows);
+            break;
+        case "DiagnosticReport":
+            buildDiagnosticReportSummary(resource, rows);
+            break;
+        case "Immunization":
+            buildImmunizationSummary(resource, rows);
+            break;
+        case "AllergyIntolerance":
+            buildAllergySummary(resource, rows);
+            break;
+        default:
+            buildGenericSummary(resource, rows);
+            break;
+    }
+
+    return rows.join("");
+}
+
+// Observation 專用摘要
+function buildObservationSummary(resource, rows) {
+    // 檢查項目名稱
+    if (resource.code) {
+        const codeName = resource.code.text || getCodingDisplay(resource.code.coding) || "-";
+        rows.push(`<div class="summary-row"><span>檢查項目</span><span>${codeName}</span></div>`);
+    }
+    
+    // 分類
+    if (resource.category && resource.category.length > 0) {
+        const category = resource.category[0].coding?.[0]?.display || 
+                        resource.category[0].text || "-";
+        rows.push(`<div class="summary-row"><span>分類</span><span>${category}</span></div>`);
+    }
+    
+    // 測量值
+    if (resource.valueQuantity) {
+        const value = `${resource.valueQuantity.value || ""} ${resource.valueQuantity.unit || ""}`.trim();
+        rows.push(`<div class="summary-row"><span>測量值</span><span>${value}</span></div>`);
+    } else if (resource.valueString) {
+        rows.push(`<div class="summary-row"><span>測量值</span><span>${resource.valueString}</span></div>`);
+    } else if (resource.valueCodeableConcept) {
+        const value = resource.valueCodeableConcept.text || 
+                     getCodingDisplay(resource.valueCodeableConcept.coding) || "-";
+        rows.push(`<div class="summary-row"><span>測量值</span><span>${value}</span></div>`);
+    }
+    
+    // 參考範圍
+    if (resource.referenceRange && resource.referenceRange.length > 0) {
+        const range = resource.referenceRange[0];
+        const low = range.low?.value || "";
+        const high = range.high?.value || "";
+        const unit = range.low?.unit || range.high?.unit || "";
+        if (low || high) {
+            rows.push(`<div class="summary-row"><span>參考範圍</span><span>${low}-${high} ${unit}</span></div>`);
+        }
+    }
+    
+    // 狀態
+    if (resource.status) {
+        rows.push(`<div class="summary-row"><span>狀態</span><span>${resource.status}</span></div>`);
+    }
+    
+    // 檢查時間
+    if (resource.effectiveDateTime) {
+        rows.push(`<div class="summary-row"><span>檢查時間</span><span>${formatDate(resource.effectiveDateTime)}</span></div>`);
+    } else if (resource.effectivePeriod) {
+        const start = formatDate(resource.effectivePeriod.start);
+        const end = formatDate(resource.effectivePeriod.end);
+        rows.push(`<div class="summary-row"><span>檢查時間</span><span>${start} ~ ${end}</span></div>`);
+    }
+}
+
+// Condition 專用摘要
+function buildConditionSummary(resource, rows) {
+    // 診斷名稱
+    if (resource.code) {
+        const conditionName = resource.code.text || getCodingDisplay(resource.code.coding) || "-";
+        rows.push(`<div class="summary-row"><span>診斷名稱</span><span>${conditionName}</span></div>`);
+    }
+    
+    // 臨床狀態
+    if (resource.clinicalStatus) {
+        const status = resource.clinicalStatus.coding?.[0]?.display || 
+                      resource.clinicalStatus.coding?.[0]?.code || "-";
+        rows.push(`<div class="summary-row"><span>臨床狀態</span><span>${status}</span></div>`);
+    }
+    
+    // 驗證狀態
+    if (resource.verificationStatus) {
+        const status = resource.verificationStatus.coding?.[0]?.display || 
+                      resource.verificationStatus.coding?.[0]?.code || "-";
+        rows.push(`<div class="summary-row"><span>驗證狀態</span><span>${status}</span></div>`);
+    }
+    
+    // 嚴重程度
+    if (resource.severity) {
+        const severity = resource.severity.text || getCodingDisplay(resource.severity.coding) || "-";
+        rows.push(`<div class="summary-row"><span>嚴重程度</span><span>${severity}</span></div>`);
+    }
+    
+    // 發病日期
+    if (resource.onsetDateTime) {
+        rows.push(`<div class="summary-row"><span>發病日期</span><span>${formatDate(resource.onsetDateTime)}</span></div>`);
+    } else if (resource.onsetPeriod) {
+        const start = formatDate(resource.onsetPeriod.start);
+        rows.push(`<div class="summary-row"><span>發病日期</span><span>${start}</span></div>`);
+    }
+    
+    // 記錄日期
+    if (resource.recordedDate) {
+        rows.push(`<div class="summary-row"><span>記錄日期</span><span>${formatDate(resource.recordedDate)}</span></div>`);
+    }
+}
+
+// Procedure 專用摘要
+function buildProcedureSummary(resource, rows) {
+    // 處置名稱
+    if (resource.code) {
+        const procedureName = resource.code.text || getCodingDisplay(resource.code.coding) || "-";
+        rows.push(`<div class="summary-row"><span>處置名稱</span><span>${procedureName}</span></div>`);
+    }
+    
+    // 狀態
+    if (resource.status) {
+        rows.push(`<div class="summary-row"><span>狀態</span><span>${resource.status}</span></div>`);
+    }
+    
+    // 執行時間
+    if (resource.performedDateTime) {
+        rows.push(`<div class="summary-row"><span>執行時間</span><span>${formatDate(resource.performedDateTime)}</span></div>`);
+    } else if (resource.performedPeriod) {
+        const start = formatDate(resource.performedPeriod.start);
+        const end = formatDate(resource.performedPeriod.end);
+        rows.push(`<div class="summary-row"><span>執行時間</span><span>${start} ~ ${end}</span></div>`);
+    }
+    
+    // 類別
+    if (resource.category) {
+        const category = resource.category.text || getCodingDisplay(resource.category.coding) || "-";
+        rows.push(`<div class="summary-row"><span>類別</span><span>${category}</span></div>`);
+    }
+}
+
+// Encounter 專用摘要
+function buildEncounterSummary(resource, rows) {
+    // 就醫類型
+    if (resource.type && resource.type.length > 0) {
+        const encounterType = resource.type[0].text || getCodingDisplay(resource.type[0].coding) || "-";
+        rows.push(`<div class="summary-row"><span>就醫類型</span><span>${encounterType}</span></div>`);
+    }
+    
+    // 狀態
+    if (resource.status) {
+        rows.push(`<div class="summary-row"><span>狀態</span><span>${resource.status}</span></div>`);
+    }
+    
+    // 就醫時間
+    if (resource.period) {
+        const start = formatDate(resource.period.start);
+        const end = formatDate(resource.period.end);
+        if (start && end) {
+            rows.push(`<div class="summary-row"><span>就醫時間</span><span>${start} ~ ${end}</span></div>`);
+        } else if (start) {
+            rows.push(`<div class="summary-row"><span>開始時間</span><span>${start}</span></div>`);
+        }
+    }
+    
+    // 就醫分類
+    if (resource.class) {
+        const classDisplay = resource.class.display || resource.class.code || "-";
+        rows.push(`<div class="summary-row"><span>就醫分類</span><span>${classDisplay}</span></div>`);
+    }
+}
+
+// 藥物相關摘要
+function buildMedicationSummary(resource, rows) {
+    // 藥品名稱
+    if (resource.medicationCodeableConcept) {
+        const medName = resource.medicationCodeableConcept.text || 
+                       getCodingDisplay(resource.medicationCodeableConcept.coding) || "-";
+        rows.push(`<div class="summary-row"><span>藥品名稱</span><span>${medName}</span></div>`);
+    }
+    
+    // 狀態
+    if (resource.status) {
+        rows.push(`<div class="summary-row"><span>狀態</span><span>${resource.status}</span></div>`);
+    }
+    
+    // 劑量
+    if (resource.dosage && resource.dosage.length > 0) {
+        const dosage = resource.dosage[0].text || "-";
+        rows.push(`<div class="summary-row"><span>劑量說明</span><span>${dosage}</span></div>`);
+    }
+    
+    // 開立日期
+    if (resource.authoredOn) {
+        rows.push(`<div class="summary-row"><span>開立日期</span><span>${formatDate(resource.authoredOn)}</span></div>`);
+    }
+    
+    // 有效期間
+    if (resource.effectivePeriod) {
+        const start = formatDate(resource.effectivePeriod.start);
+        const end = formatDate(resource.effectivePeriod.end);
+        rows.push(`<div class="summary-row"><span>用藥期間</span><span>${start} ~ ${end}</span></div>`);
+    }
+}
+
+// DiagnosticReport 專用摘要
+function buildDiagnosticReportSummary(resource, rows) {
+    // 報告名稱
+    if (resource.code) {
+        const reportName = resource.code.text || getCodingDisplay(resource.code.coding) || "-";
+        rows.push(`<div class="summary-row"><span>報告名稱</span><span>${reportName}</span></div>`);
+    }
+    
+    // 狀態
+    if (resource.status) {
+        rows.push(`<div class="summary-row"><span>狀態</span><span>${resource.status}</span></div>`);
+    }
+    
+    // 分類
+    if (resource.category && resource.category.length > 0) {
+        const category = resource.category[0].text || getCodingDisplay(resource.category[0].coding) || "-";
+        rows.push(`<div class="summary-row"><span>分類</span><span>${category}</span></div>`);
+    }
+    
+    // 報告日期
+    if (resource.effectiveDateTime) {
+        rows.push(`<div class="summary-row"><span>報告日期</span><span>${formatDate(resource.effectiveDateTime)}</span></div>`);
+    }
+    
+    // 發布日期
+    if (resource.issued) {
+        rows.push(`<div class="summary-row"><span>發布日期</span><span>${formatDate(resource.issued)}</span></div>`);
+    }
+    
+    // 結論
+    if (resource.conclusion) {
+        rows.push(`<div class="summary-row"><span>結論</span><span>${resource.conclusion}</span></div>`);
+    }
+}
+
+// Immunization 專用摘要
+function buildImmunizationSummary(resource, rows) {
+    // 疫苗名稱
+    if (resource.vaccineCode) {
+        const vaccineName = resource.vaccineCode.text || getCodingDisplay(resource.vaccineCode.coding) || "-";
+        rows.push(`<div class="summary-row"><span>疫苗名稱</span><span>${vaccineName}</span></div>`);
+    }
+    
+    // 狀態
+    if (resource.status) {
+        rows.push(`<div class="summary-row"><span>狀態</span><span>${resource.status}</span></div>`);
+    }
+    
+    // 接種日期
+    if (resource.occurrenceDateTime) {
+        rows.push(`<div class="summary-row"><span>接種日期</span><span>${formatDate(resource.occurrenceDateTime)}</span></div>`);
+    }
+    
+    // 劑次
+    if (resource.doseQuantity) {
+        const dose = `${resource.doseQuantity.value || ""} ${resource.doseQuantity.unit || ""}`.trim();
+        rows.push(`<div class="summary-row"><span>劑量</span><span>${dose}</span></div>`);
+    }
+}
+
+// AllergyIntolerance 專用摘要
+function buildAllergySummary(resource, rows) {
+    // 過敏原
+    if (resource.code) {
+        const allergen = resource.code.text || getCodingDisplay(resource.code.coding) || "-";
+        rows.push(`<div class="summary-row"><span>過敏原</span><span>${allergen}</span></div>`);
+    }
+    
+    // 臨床狀態
+    if (resource.clinicalStatus) {
+        const status = resource.clinicalStatus.coding?.[0]?.display || 
+                      resource.clinicalStatus.coding?.[0]?.code || "-";
+        rows.push(`<div class="summary-row"><span>臨床狀態</span><span>${status}</span></div>`);
+    }
+    
+    // 類型
+    if (resource.type) {
+        rows.push(`<div class="summary-row"><span>類型</span><span>${resource.type}</span></div>`);
+    }
+    
+    // 嚴重程度
+    if (resource.criticality) {
+        rows.push(`<div class="summary-row"><span>嚴重程度</span><span>${resource.criticality}</span></div>`);
+    }
+    
+    // 記錄日期
+    if (resource.recordedDate) {
+        rows.push(`<div class="summary-row"><span>記錄日期</span><span>${formatDate(resource.recordedDate)}</span></div>`);
+    }
+}
+
+// 通用摘要（其他資源類型）
+function buildGenericSummary(resource, rows) {
+    // 狀態
     if (resource.status) {
         rows.push(`<div class="summary-row"><span>狀態</span><span>${resource.status}</span></div>`);
     }
 
+    // 代碼
     if (resource.code) {
         rows.push(`<div class="summary-row"><span>代碼</span><span>${resource.code.text || getCodingDisplay(resource.code.coding) || "-"}</span></div>`);
     }
 
+    // 日期
     if (resource.effectiveDateTime) {
-        rows.push(`<div class="summary-row"><span>日期</span><span>${resource.effectiveDateTime}</span></div>`);
+        rows.push(`<div class="summary-row"><span>日期</span><span>${formatDate(resource.effectiveDateTime)}</span></div>`);
     }
 
     if (resource.authoredOn) {
-        rows.push(`<div class="summary-row"><span>日期</span><span>${resource.authoredOn}</span></div>`);
+        rows.push(`<div class="summary-row"><span>日期</span><span>${formatDate(resource.authoredOn)}</span></div>`);
     }
 
     if (resource.issued) {
-        rows.push(`<div class="summary-row"><span>發布</span><span>${resource.issued}</span></div>`);
+        rows.push(`<div class="summary-row"><span>發布</span><span>${formatDate(resource.issued)}</span></div>`);
     }
 
     if (resource.subject && resource.subject.reference) {
         rows.push(`<div class="summary-row"><span>Subject</span><span>${resource.subject.reference}</span></div>`);
     }
+}
 
-    return rows.join("");
+// 日期格式化輔助函數
+function formatDate(dateString) {
+    if (!dateString) return "-";
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleString('zh-TW', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return dateString;
+    }
 }
 
 function formatHumanName(name) {
